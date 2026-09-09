@@ -27,14 +27,12 @@ async function mkClient(code, name) {
 function until(c, pred, ms = 30000) {
   return new Promise((res, rej) => {
     const t0 = Date.now();
-    const tick = () => {
+    const iv = setInterval(() => {
       let ok = false;
       try { ok = pred(); } catch {}
-      if (ok) return res();
-      if (Date.now() - t0 > ms) return rej(new Error(`timeout waiting (${c.name})`));
-    };
-    c.waiters.push(tick);
-    tick();
+      if (ok) { clearInterval(iv); return res(); }
+      if (Date.now() - t0 > ms) { clearInterval(iv); return rej(new Error(`timeout waiting (${c.name})`)); }
+    }, 100);
   });
 }
 
@@ -62,10 +60,13 @@ const botActTimes = []; // ms between a bot becoming actor and the act landing
 let lastActor = null, lastActorAt = 0;
 const t0 = Date.now();
 let botDecisions = 0;
+let turnSeq = 0; // bumps on every actor change: a player can act twice on one street
+const sentTurns = new Set(); // send at most one action per distinct turn
 while (Date.now() - t0 < 240000) {
   const st = host.state;
   if (st.status === 'between') break;
   if (st.hand && st.hand.acting !== lastActor) {
+    turnSeq++;
     if (lastActor && bots.some((b) => b.id === lastActor)) {
       botActTimes.push(Date.now() - lastActorAt);
       botDecisions++;
@@ -73,7 +74,8 @@ while (Date.now() - t0 < 240000) {
     lastActor = st.hand.acting;
     lastActorAt = Date.now();
   }
-  if (st.actions?.yourTurn) {
+  if (st.actions?.yourTurn && !sentTurns.has(turnSeq)) {
+    sentTurns.add(turnSeq);
     const a = st.actions;
     host.send({ t: 'action', kind: a.owe > 0 ? 'call' : 'check' });
     await sleep(150);
@@ -98,10 +100,13 @@ for (let handN = 2; handN <= 3; handN++) {
   host.send({ t: 'start' });
   await until(host, () => host.state.status === 'playing');
   const t1 = Date.now();
+  let lastActor2 = null;
   while (Date.now() - t1 < 240000) {
     const st = host.state;
     if (st.status === 'between') break;
-    if (st.actions?.yourTurn) {
+    if (st.hand && st.hand.acting !== lastActor2) { turnSeq++; lastActor2 = st.hand.acting; }
+    if (st.actions?.yourTurn && !sentTurns.has(turnSeq)) {
+      sentTurns.add(turnSeq);
       const a = st.actions;
       // mix in a fold sometimes so hands vary
       host.send({ t: 'action', kind: handN === 3 && a.canFold ? 'fold' : a.owe > 0 ? 'call' : 'check' });
