@@ -20,21 +20,23 @@
 
   <section id="home" class="view">
     <div class="home-inner">
-      <div class="brand">
-        <div class="brand-mark">&#9824;</div>
+      <div class="brand rise" style="--d:.02s">
+        <div class="brand-mark">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C9.6 6.2 5 9.6 5 13a4.4 4.4 0 0 0 5.4 4.3c-.4 1.5-1 2.7-1.9 3.7h7c-.9-1-1.5-2.2-1.9-3.7A4.4 4.4 0 0 0 19 13c0-3.4-4.6-6.8-7-11Z"/></svg>
+        </div>
         <h1>Pocket Poker</h1>
         <p class="tagline">No-limit hold&rsquo;em with friends.<br>No accounts. No installs. Play money.</p>
       </div>
-      <div class="panel">
+      <div class="panel rise" style="--d:.12s">
         <input id="nameInput" class="text-input" maxlength="16" autocomplete="off" autocorrect="off" placeholder="Your name" enterkeyhint="go">
         <button id="createBtn" class="btn primary big">Create a table</button>
         <div class="divider"><span>or join with a code</span></div>
         <form id="joinForm" class="join-row">
           <input id="codeInput" class="text-input code" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false">
-          <button class="btn" type="submit">Join</button>
+          <button class="btn quiet" type="submit">Join</button>
         </form>
       </div>
-      <p class="fineprint">Play money only &middot; just for fun</p>
+      <p class="fineprint rise" style="--d:.22s">Play money only &middot; just for fun</p>
     </div>
   </section>
 
@@ -42,55 +44,72 @@
     <header class="topbar">
       <button id="codeChip" class="chip" title="Invite friends">
         <span id="codeLabel">----</span>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m7 8 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m7 8 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
       </button>
-      <div id="potChip" class="chip pot hidden">
-        <span class="pot-coin"></span>
-        <b id="potVal">0</b>
-      </div>
-      <button id="menuBtn" class="chip icon-only" title="Menu">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+      <button id="menuBtn" class="chip icon-only" title="Menu" aria-label="Menu">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
       </button>
     </header>
 
+    <div id="feed" class="feed hidden"><span id="feedText"></span></div>
+
     <div id="felt">
-      <div class="felt-sheen"></div>
-      <div id="streetLabel" class="street-label hidden"></div>
-      <div id="community" class="community"></div>
+      <div id="rail"></div>
+      <div id="center">
+        <div id="potLine" class="pot-line hidden">
+          <span id="streetLabel" class="street-label"></span>
+          <span id="potPill" class="pot-pill">
+            <svg class="chipglyph" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.4"/><path d="M12 3.8v3M12 17.2v3M3.8 12h3M17.2 12h3"/></svg>
+            <b id="potVal">0</b>
+          </span>
+        </div>
+        <div id="community" class="community"></div>
+      </div>
       <div id="seats"></div>
     </div>
 
+    <div id="fx"></div>
+
     <div id="meArea">
       <div id="myCards" class="mycards"></div>
-      <div id="meInfo" class="me-info hidden"><span id="meName"></span><span id="meStack" class="stack-pill"></span></div>
+      <div id="meInfo" class="me-info hidden">
+        <span id="meName"></span><span class="me-dot">&middot;</span><span id="meStack" class="stack-pill"></span>
+      </div>
+      <div id="meTimer" class="timer-track hidden"><i id="meTimerFill"></i></div>
       <div id="actionBar" class="actions hidden">
-        <button id="foldBtn" class="btn danger">Fold</button>
-        <button id="callBtn" class="btn neutral">Check</button>
-        <button id="raiseBtn" class="btn gold">Bet</button>
+        <button id="foldBtn" class="btn quiet">Fold</button>
+        <button id="callBtn" class="btn primary">Check</button>
+        <button id="raiseBtn" class="btn outline">Bet</button>
       </div>
       <div id="raiseSheet" class="raise-sheet hidden">
         <div class="raise-head">
-          <span id="raiseVal">0</span>
-          <button id="raiseClose" class="chip icon-only"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          <span class="raise-cap" id="raiseCap">Raise to</span>
+          <button id="raiseClose" class="xbtn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
+        <div id="raiseVal" class="raise-val">0</div>
         <input type="range" id="raiseRange" min="0" max="100" value="0">
+        <div class="range-ends"><span id="raiseMin">0</span><span id="raiseMax">0</span></div>
         <div class="quick-row">
           <button class="chip qbtn" data-q="min">Min</button>
           <button class="chip qbtn" data-q="pot">Pot</button>
           <button class="chip qbtn" data-q="allin">All in</button>
-          <button id="raiseConfirm" class="btn gold">Raise</button>
         </div>
+        <button id="raiseConfirm" class="btn primary big">Raise</button>
       </div>
     </div>
 
-    <div id="lobby" class="overlay">
+    <div id="lobby" class="overlay hidden">
       <div class="sheet">
-        <h2 id="lobbyTitle">Lobby</h2>
+        <div class="grabber"></div>
+        <h2 id="lobbyTitle">Table lobby</h2>
         <p class="lobby-sub">Share the code - friends tap the link and they&rsquo;re in.</p>
-        <button id="shareBtn" class="share-code"><span id="shareCode">----</span><span class="share-hint">tap to invite</span></button>
+        <button id="shareBtn" class="share-code">
+          <span id="shareCode">----</span>
+          <span class="share-hint">tap to invite</span>
+        </button>
         <ul id="lobbyPlayers" class="lobby-players"></ul>
         <button id="addBotBtn" class="btn ghost hidden">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           Add a bot
         </button>
         <div id="hostSettings" class="host-settings hidden">
@@ -111,27 +130,32 @@
     </div>
 
     <div id="betweenBar" class="between-bar hidden">
-      <div id="resultText" class="result-text"></div>
-      <button id="nextHandBtn" class="btn primary hidden">Next hand</button>
-      <button id="rebuyBtn" class="btn hidden">Rebuy</button>
+      <div class="banner">
+        <div id="resultText" class="result-text"></div>
+        <div class="banner-btns">
+          <button id="rebuyBtn" class="btn quiet hidden">Rebuy</button>
+          <button id="nextHandBtn" class="btn primary hidden">Next hand</button>
+        </div>
+      </div>
     </div>
 
     <div id="menuSheet" class="overlay hidden">
       <div class="sheet">
+        <div class="grabber"></div>
         <h2>Table</h2>
-        <button id="menuShare" class="menu-item">Invite friends</button>
-        <button id="menuRebuy" class="menu-item hidden">Rebuy to full stack</button>
-        <button id="menuRestart" class="menu-item hidden">Restart game (reset stacks)</button>
-        <button id="menuLeave" class="menu-item warn">Leave table</button>
-        <button id="menuClose" class="btn">Close</button>
+        <div class="menu-list">
+          <button id="menuShare" class="menu-item">Invite friends</button>
+          <button id="menuRebuy" class="menu-item hidden">Rebuy to full stack</button>
+          <button id="menuRestart" class="menu-item hidden">Restart game</button>
+          <button id="menuLeave" class="menu-item warn">Leave table</button>
+        </div>
+        <button id="menuClose" class="btn quiet big">Close</button>
       </div>
     </div>
 
     <div id="connOverlay" class="overlay dark hidden">
       <div class="conn-box"><div class="spinner"></div><p>Reconnecting&hellip;</p></div>
     </div>
-
-    <div id="toasts"></div>
   </section>
 </div>
 <script src="/app.js"></script>
