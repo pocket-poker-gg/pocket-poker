@@ -1,5 +1,6 @@
 // Pocket Poker engine - pure, no I/O. Server-authoritative state machine for NLHE.
 import pokersolver from 'pokersolver';
+import { BOT_PROFILES } from './bots.js';
 const { Hand } = pokersolver;
 
 const SUITS = ['c', 'd', 'h', 's'];
@@ -85,6 +86,33 @@ export function join(state, { name, token }) {
   return { player: p, token: p.token };
 }
 
+export function addBot(state, byId) {
+  if (byId !== state.hostId) throw new GameError('Only the host can add bots');
+  if (state.players.length >= 9) throw new GameError('Table is full (9 max)');
+  const usedNames = new Set(state.players.map((p) => p.name));
+  let prof = BOT_PROFILES.find((pr) => !usedNames.has(pr.name));
+  if (!prof) prof = BOT_PROFILES[randInt(BOT_PROFILES.length)];
+  let name = prof.name;
+  for (let i = 2; usedNames.has(name); i++) name = `${prof.name} ${i}`;
+  const usedSeats = new Set(state.players.map((p) => p.seat));
+  let seat = 0;
+  while (usedSeats.has(seat)) seat++;
+  const p = {
+    id: 'p' + ++state.seq,
+    name,
+    seat,
+    token: null,
+    stack: state.config.stack,
+    connected: true,
+    sittingOut: false,
+    isBot: true,
+    bot: { tight: prof.tight, aggro: prof.aggro, bluff: prof.bluff, pace: prof.pace },
+  };
+  state.players.push(p);
+  log(state, `${p.name} (bot) joined`);
+  return { player: p };
+}
+
 export function markConnected(state, id, connected) {
   const p = state.players.find((x) => x.id === id);
   if (p) {
@@ -95,13 +123,15 @@ export function markConnected(state, id, connected) {
 }
 
 export function kick(state, byId, targetId) {
-  if (byId !== state.hostId) throw new GameError('Only the host can remove players');
+  if (byId !== state.hostId && byId !== targetId)
+    throw new GameError('Only the host can remove players');
   const t = state.players.find((p) => p.id === targetId);
   if (!t) return;
   if (state.hand && !state.hand.folded[targetId] && inHand(state, targetId))
     throw new GameError('Cannot remove a player mid-hand');
   state.players = state.players.filter((p) => p.id !== targetId);
-  if (state.hostId === targetId) state.hostId = state.players[0]?.id || null;
+  if (state.hostId === targetId)
+    state.hostId = state.players.find((p) => !p.isBot)?.id || null;
   log(state, `${t.name} was removed`);
 }
 
@@ -133,6 +163,13 @@ function nextIdx(arr, fromSeat) {
 export function startHand(state, byId) {
   if (byId !== state.hostId) throw new GameError('Only the host can start');
   if (state.status === 'playing') throw new GameError('Hand already in progress');
+  for (const p of state.players) {
+    if (p.isBot && p.stack === 0) {
+      p.stack = state.config.stack;
+      p.sittingOut = false;
+      log(state, `${p.name} (bot) rebought to ${p.stack}`);
+    }
+  }
   const act = activePlayers(state);
   if (act.length < 2) throw new GameError('Need at least 2 players with chips');
 
@@ -211,6 +248,20 @@ function beginTurn(state) {
   const h = state.hand;
   h.acting = h.toAct[0] || null;
   h.turnDeadline = h.acting ? Date.now() + TURN_MS : 0;
+  h.botActAt = 0;
+  if (h.acting) {
+    const p = state.players.find((x) => x.id === h.acting);
+    if (p && p.isBot) h.botActAt = Date.now() + botThinkMs(state, p);
+  }
+}
+
+function botThinkMs(state, p) {
+  const h = state.hand;
+  const owe = h ? Math.max(0, h.currentBet - (h.streetBets[p.id] || 0)) : 0;
+  let ms = 900 + randInt(1800);
+  if (owe > 0) ms += Math.min(2000, Math.round((owe / Math.max(1, p.stack + owe)) * 3000));
+  const pace = p.bot && typeof p.bot.pace === 'number' ? p.bot.pace : 1;
+  return Math.min(6500, Math.round(ms * pace));
 }
 
 export function potTotal(hand) {
@@ -226,9 +277,16 @@ export function availableActions(state, id) {
   if (owe === 0) {
     out.canCheck = true;
     if (p.stack > 0 && !h.noReopen[id]) {
-      out.canBet = true;
-      out.minBet = Math.min(state.config.bb, p.stack);
-      out.maxBet = p.stack;
+      if (h.currentBet === 0) {
+        out.canBet = true;
+        out.minBet = Math.min(state.config.bb, p.stack);
+        out.maxBet = p.stack;
+      } else {
+        // big-blind option: this is a raise spot, not an opening bet
+        out.canRaise = true;
+        out.minRaiseTo = Math.min(h.currentBet + h.minRaise, (h.streetBets[id] || 0) + p.stack);
+        out.maxRaiseTo = (h.streetBets[id] || 0) + p.stack;
+      }
     }
   } else {
     out.canFold = true;
@@ -571,6 +629,7 @@ export function publicState(state, forId) {
       connected: p.connected,
       sittingOut: p.sittingOut,
       isHost: p.id === state.hostId,
+      isBot: !!p.isBot,
       bet: h ? h.streetBets[p.id] || 0 : 0,
       contrib: h ? h.contrib[p.id] || 0 : 0,
       folded: h ? !!h.folded[p.id] : false,

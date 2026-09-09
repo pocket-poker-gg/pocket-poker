@@ -1,7 +1,8 @@
 import {
-  createGame, join, act, startHand, kick, rebuy,
+  createGame, join, addBot, act, startHand, kick, rebuy, availableActions,
   markConnected, timeoutAct, publicState, GameError,
 } from './engine.js';
+import { decideBotAction } from './bots.js';
 
 export class PokerRoom {
   constructor(ctx, env) {
@@ -33,7 +34,9 @@ export class PokerRoom {
     await this.ctx.storage.put('state', this.state);
     const h = this.state?.hand;
     if (this.state?.status === 'playing' && h?.turnDeadline) {
-      await this.ctx.storage.setAlarm(h.turnDeadline + 400);
+      let at = h.turnDeadline + 400;
+      if (h.botActAt) at = Math.min(at, h.botActAt);
+      await this.ctx.storage.setAlarm(at);
     }
   }
 
@@ -62,6 +65,11 @@ export class PokerRoom {
         this.sessions.set(ws, player.id);
         ws.serializeAttachment({ pid: player.id });
         this.send(ws, { t: 'welcome', playerId: player.id, token, rejoined: !!rejoined });
+        return;
+      }
+      case 'add_bot': {
+        if (!this.state) throw new GameError('No table yet');
+        addBot(this.state, pid);
         return;
       }
       case 'start':
@@ -142,8 +150,29 @@ export class PokerRoom {
 
   async alarm() {
     if (!this.state) return;
+    // bots whose think time has elapsed act now; each action may queue the next
+    // bot whose botActAt is already past (e.g. after hibernation)
     let guard = 0;
-    while (timeoutAct(this.state) && guard++ < 20) {}
+    while (this.state.status === 'playing' && guard++ < 40) {
+      const h = this.state.hand;
+      if (!h || !h.acting) break;
+      const p = this.state.players.find((x) => x.id === h.acting);
+      if (!p || !p.isBot) break;
+      if (!h.botActAt || Date.now() < h.botActAt) break;
+      try {
+        const av = availableActions(this.state, p.id);
+        act(this.state, p.id, decideBotAction(this.state, p.id, av));
+      } catch {
+        try {
+          const owe = h.currentBet - (h.streetBets[p.id] || 0);
+          act(this.state, p.id, { kind: owe > 0 ? 'call' : 'check' });
+        } catch {
+          break;
+        }
+      }
+    }
+    let g2 = 0;
+    while (timeoutAct(this.state) && g2++ < 20) {}
     await this.save();
     this.broadcast();
   }

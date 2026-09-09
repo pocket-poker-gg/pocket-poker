@@ -248,6 +248,16 @@ body {
 .lobby-players .dot.off { background: #636366; }
 .lobby-players .who { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lobby-players .badge { font-size: 11px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; }
+.lobby-players .badge.bot { color: var(--gold); }
+.btn.ghost {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: none; border: 1.5px dashed rgba(255, 255, 255, 0.22); color: var(--text-dim);
+}
+.btn.ghost:active { transform: scale(0.98); }
+.bottag {
+  font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--gold); vertical-align: 2px; margin-left: 4px;
+}
 .lobby-players .kick {
   background: none; border: none; color: var(--red); font: inherit; font-size: 17px; cursor: pointer; padding: 2px 6px;
 }

@@ -158,7 +158,7 @@
         ${hole}
         <div class="avatar">
           ${p.isDealer ? '<div class="dealer-btn">D</div>' : ''}
-          <div class="sname">${escapeHtml(p.name)}</div>
+          <div class="sname">${escapeHtml(p.name)}${p.isBot ? '<span class="bottag">bot</span>' : ''}</div>
           <div class="sstack">${fmt(p.stack)}</div>
         </div>
         ${p.bet > 0 && st.status === 'playing' ? `<div class="bet-chip">${fmt(p.bet)}</div>` : ''}
@@ -208,7 +208,7 @@
     } else {
       fold.classList.add('hidden');
       call.textContent = 'Check';
-      raise.textContent = a.canBet ? 'Bet' : 'All in';
+      raise.textContent = a.canBet ? 'Bet' : a.canRaise ? 'Raise' : 'All in';
     }
     call.onclick = () => { sendMsg({ t: 'action', kind: a.owe > 0 ? 'call' : 'check' }); hide('raiseSheet'); };
     fold.onclick = () => { sendMsg({ t: 'action', kind: 'fold' }); hide('raiseSheet'); };
@@ -263,6 +263,7 @@
         <span class="dot${p.connected ? '' : ' off'}"></span>
         <span class="who">${escapeHtml(p.name)}</span>
         ${p.isHost ? '<span class="badge">host</span>' : ''}
+        ${p.isBot ? '<span class="badge bot">bot</span>' : ''}
         ${st.hostId === myId && p.id !== myId ? '<button class="kick" title="Remove">&times;</button>' : ''}
       `;
       const kickBtn = li.querySelector('.kick');
@@ -270,13 +271,14 @@
       ul.appendChild(li);
     }
     const isHost = st.hostId === myId;
+    $('addBotBtn').classList.toggle('hidden', !(isHost && st.players.length < 9));
     $('hostSettings').classList.toggle('hidden', !isHost);
     const startBtn = $('startBtn');
     startBtn.classList.toggle('hidden', !isHost);
     startBtn.disabled = st.players.length < 2;
     startBtn.textContent = st.handNum > 0 ? 'Deal again' : 'Deal the first hand';
     $('lobbyHint').textContent = isHost
-      ? (st.players.length < 2 ? 'Waiting for at least one friend to join.' : '')
+      ? (st.players.length < 2 ? 'Add a bot, or wait for a friend to join.' : '')
       : 'Waiting for the host to deal.';
 
     // settings segs reflect config
@@ -375,6 +377,7 @@
     if (roomCode) localStorage.removeItem(tokenKey(roomCode));
     location.href = '/';
   };
+  $('addBotBtn').onclick = () => sendMsg({ t: 'add_bot' });
   $('startBtn').onclick = () => sendMsg({ t: 'start' });
   $('nextHandBtn').onclick = () => sendMsg({ t: 'start' });
   $('rebuyBtn').onclick = () => sendMsg({ t: 'rebuy' });
