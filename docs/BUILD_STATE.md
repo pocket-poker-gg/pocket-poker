@@ -23,3 +23,4 @@ Cloudflare's current documentation says the account `workers.dev` subdomain is c
 
 ## Deploy finding
 First live deploy uploaded the new assets, but Cloudflare's default asset routing served `/` before the Worker, so room-aware substitution did not run. Added `[assets].run_worker_first = true`; redeploy required. This is why live verification is part of the gate.
+The asset binding canonicalizes `/index.html` to `/`, so fetching `/index.html` from the Worker returned a 307 and prevented replacement. Fixed by passing the original root request to `env.ASSETS`; no recursion occurs because this calls the asset binding, not the Worker entrypoint.

@@ -25,7 +25,7 @@ export default {
     // Serve the HTML shell through the Worker so link crawlers receive a room-aware
     // invitation even though the app itself remains a static PWA.
     if (request.method === 'GET' && url.pathname === '/') {
-      const asset = await env.ASSETS.fetch(new Request(new URL('/index.html', url), request));
+      const asset = await env.ASSETS.fetch(request);
       if (!asset.ok) return asset;
 
       const code = (url.searchParams.get('room') || '').toUpperCase();
