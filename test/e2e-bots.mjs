@@ -11,7 +11,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const PROTOCOL_VERSION = 2; let actionNo = 0;
 
 async function mkClient(code, name) {
-  const c = { name, id: null, token: null, state: null, log: [], states: [], ws: new WebSocket(`${WSBASE}/ws/${code}`), waiters: [] };
+  const c = { name, id: null, token: null, state: null, log: [], states: [], ws: new WebSocket(`${WSBASE}/ws/${code}`, { origin: BASE }), waiters: [] };
   c.ws.on('message', (raw) => {
     const m = JSON.parse(raw.toString());
     if (m.t === 'welcome') { c.id = m.playerId; c.token = m.token; }

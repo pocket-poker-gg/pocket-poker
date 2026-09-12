@@ -10,7 +10,7 @@ let actionNo = 0;
 async function mkClient(code, name) {
   const c = {
     name, id: null, token: null, state: null, log: [],
-    ws: new WebSocket(`${WSBASE}/ws/${code}`),
+    ws: new WebSocket(`${WSBASE}/ws/${code}`, { origin: BASE }),
     waiters: [],
   };
   c.ws.on('message', (raw) => {
@@ -105,7 +105,7 @@ const b2 = await mkClient(code, 'Bob');
 b2.ws.close();
 await sleep(200);
 // manual rejoin with token
-const bw = new WebSocket(`${WSBASE}/ws/${code}`);
+const bw = new WebSocket(`${WSBASE}/ws/${code}`, { origin: BASE });
 await new Promise((r) => bw.on('open', r));
 bw.send(JSON.stringify({ t: 'join', protocolVersion: PROTOCOL_VERSION, name: 'Bob', token: bTok }));
 const rejoined = await new Promise((res) => bw.on('message', (raw) => { const m = JSON.parse(raw.toString()); if (m.t === 'welcome') res(m); }));
