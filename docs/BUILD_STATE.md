@@ -24,3 +24,14 @@ Cloudflare's current documentation says the account `workers.dev` subdomain is c
 ## Deploy finding
 First live deploy uploaded the new assets, but Cloudflare's default asset routing served `/` before the Worker, so room-aware substitution did not run. Added `[assets].run_worker_first = true`; redeploy required. This is why live verification is part of the gate.
 The asset binding canonicalizes `/index.html` to `/`, so fetching `/index.html` from the Worker returned a 307 and prevented replacement. Fixed by passing the original root request to `env.ASSETS`; no recursion occurs because this calls the asset binding, not the Worker entrypoint.
+
+## Shipped and verified (2026-09-12)
+- Production deployment: `https://pocket-poker.pocket-poker-gg.workers.dev`
+- Version: `659c906f-3c45-4217-949c-a6dbdb24f552`
+- Real production room metadata verified with room `YU4R`: room-specific title, description, canonical URL, OG image, and Twitter large image all emitted server-side.
+- Live invite image verified as PNG RGB 1200x630.
+- External OpenGraph.xyz scan: 0 errors, 1 non-card warning (generic SEO meta description length), all social preview requirements green; rendered image and room title correctly.
+- 19/19 engine + bot tests pass. Mobile app visually checked at 390x844.
+
+## URL decision
+Do not rename the account subdomain. Cloudflare now permits this, contrary to the initial assumption, but the account hosts Pocket Poker, Slate, and Logos. Renaming it would simultaneously change all three public URLs and break existing links. Creating a new account would split Durable Object state and credentials for cosmetic gain. `pocketpoker.workers.dev` is also not a valid single Worker route shape in the current Cloudflare model: Workers use `<worker>.<account-subdomain>.workers.dev`. The safe free route is to keep the existing stable URL. A shorter route like `pocket.pocket-poker-gg.workers.dev` would be a separate Worker and would not preserve existing room state without a migration/alias design. No URL mutation performed.
