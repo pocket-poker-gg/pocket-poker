@@ -64,3 +64,11 @@ The screenshot was mathematically misleading, not a wrong winner or lost chips. 
 - Added street progression and privacy regressions. 28/28 tests and exhaustive evaluator census green after changes.
 - Deployed Worker version `e83b7c0c-ac2b-49f8-8cf3-6542a59903aa`; local multi-client E2E passed and a live host-vs-bot game was played through showdown.
 - Verified production at 390x844 from preflop through flop, turn, river and showdown. The capsule stays below the hole cards without covering the table or action controls.
+
+## Table layout declutter (2026-09-12)
+- Rebuilt seat geometry: per-slot arrangements ('down' stacks cards/bet below the pill toward center with horizontal lean clamped to 0.42; 'side'/'low' seats hang cards straight inward at +/-72px and tuck bets below them at +26/+32px; dealer button attached to the pill corner toward cards at (+/-46, -26) or a*20+t*30).
+- Street label moved out of the pot line to a caption under the community cards; pot pill stands alone above the board. Bet badges can no longer collide with the pot pill or street label in any 2-9 handed layout.
+- Seat z-order: bet > cards > pill, dealer button on top.
+- 28/28 tests + exhaustive census green after changes. Verified live at 390x844: 2-handed preflop, 4-handed preflop/showdown, 6-handed preflop with three bet badges out, 6-handed river with board + RIVER caption, 6-handed showdown with reveal. No overlaps, no clipping.
+- The half-clipped panel at the right viewport edge in the user's screenshot is not app UI - never reproduced in any state; consistent with iOS/Safari edge chrome.
+- Deployed Worker version 9c82229b-4270-4862-a195-0c645dbc689f; main at 9a6048d + this note.
