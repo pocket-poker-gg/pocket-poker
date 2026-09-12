@@ -45,3 +45,12 @@ P0/P1 gaps found:
 - Deploy to production and run live E2E/security-header checks.
 - 390x844 production screenshot and visual inspection.
 - Push main and record final version/proof matrix.
+
+## E2F7 screenshot regression (fixed)
+The screenshot was mathematically misleading, not a wrong winner or lost chips. Aria's K7 correctly beat 67 on K-9-9-Q-3 and her final 790 stack was correct. The defect was settlement presentation: a 210 unmatched all-in excess was built as a one-player side pot and merged into “Aria wins 790.” Poker rules require that excess to be returned, not won. Settlement now refunds unmatched excess before pot-layer construction, reports only the 580 genuinely contested pot as winnings, and records the 210 refund separately. A regression test recreates the exact cards and 290-vs-500 contribution ledger.
+
+## Production closeout
+- Deployed Worker version `9b75191b-390f-4b8a-a3e3-078c214d3c1b`.
+- Live three-client hand, private-card isolation, chip conservation, reconnect to same seat and next-hand continuation passed.
+- Live guessed/unreserved room returned 404; reserved room with foreign Origin returned 403.
+- Live response exposes CSP/frame-ancestors none, HSTS, nosniff, no-referrer, Permissions Policy, COOP and X-Frame-Options deny.
