@@ -1,0 +1,19 @@
+name: release-gates
+on: [push, pull_request]
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:proof
+      - name: Multi-client integration
+        run: |
+          npx wrangler dev --port 8787 > /tmp/wrangler.log 2>&1 &
+          trap 'cat /tmp/wrangler.log; kill $!' EXIT
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8787/ >/dev/null && break; sleep 1; done
+          npm run test:e2e
+          npm run test:e2e-bots

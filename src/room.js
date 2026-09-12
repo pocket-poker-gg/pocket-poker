@@ -15,8 +15,14 @@ export class PokerRoom {
     this.env = env;
     this.state = null;
     this.sessions = new Map();
+    this.peers = new Map();
+    this.rate = new Map();
     this.ctx.blockConcurrencyWhile(async () => {
       this.state = (await ctx.storage.get('state')) || null;
+      if (this.state?.hand) {
+        if (!Number.isInteger(this.state.hand.actionSeq)) this.state.hand.actionSeq = 0;
+        if (!Array.isArray(this.state.hand.recentActionIds)) this.state.hand.recentActionIds = [];
+      }
       for (const ws of ctx.getWebSockets()) {
         const att = ws.deserializeAttachment();
         if (att?.pid) this.sessions.set(ws, att.pid);
@@ -48,9 +54,18 @@ export class PokerRoom {
     if (!origin || origin !== expected) return new Response('Forbidden', { status: 403 });
     if ((request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket')
       return new Response('Expected WebSocket', { status: 426 });
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const keyBytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip));
+    const peer = [...new Uint8Array(keyBytes)].slice(0, 8).map((b) => b.toString(16).padStart(2, '0')).join('');
+    const now = Date.now();
+    const bucket = this.rate.get(peer) || { start: now, count: 0 };
+    if (now - bucket.start > 60_000) { bucket.start = now; bucket.count = 0; }
+    if (++bucket.count > 30) return new Response('Too many connections', { status: 429 });
+    this.rate.set(peer, bucket);
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.ctx.acceptWebSocket(server);
+    this.peers.set(server, peer);
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -86,6 +101,14 @@ export class PokerRoom {
     switch (msg.t) {
       case 'join': {
         if (pid) throw new GameError('Already joined');
+        const peer = this.peers.get(ws);
+        const newSeat = !msg.token || !this.state.players.some((p) => p.token === msg.token);
+        if (newSeat && peer) {
+          const bucket = this.rate.get(`join:${peer}`) || { start: Date.now(), count: 0 };
+          if (Date.now() - bucket.start > 60_000) { bucket.start = Date.now(); bucket.count = 0; }
+          if (++bucket.count > 12) throw new GameError('Too many join attempts - try again shortly');
+          this.rate.set(`join:${peer}`, bucket);
+        }
         const { player, token, rejoined } = join(this.state, { name: msg.name, token: msg.token });
         // One active transport owns a human seat. Close stale transports before binding.
         for (const [other, otherPid] of this.sessions) {
@@ -152,7 +175,7 @@ export class PokerRoom {
   }
 
   async webSocketClose(ws) {
-    const pid = this.sessions.get(ws); this.sessions.delete(ws);
+    const pid = this.sessions.get(ws); this.sessions.delete(ws); this.peers.delete(ws);
     if (this.state && pid && ![...this.sessions.values()].includes(pid)) {
       markConnected(this.state, pid, false); await this.save(); this.broadcast();
     }

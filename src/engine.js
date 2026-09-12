@@ -354,8 +354,9 @@ export function act(state, id, a) {
     }
     case 'bet':
     case 'raise': {
-      const to = Math.round(Number(a.amount));
-      if (!Number.isFinite(to)) throw new GameError('Bad amount');
+      const rawAmount = Number(a.amount);
+      if (!Number.isFinite(rawAmount) || !Number.isInteger(rawAmount)) throw new GameError('Bad amount');
+      const to = rawAmount;
       const streetBet = h.streetBets[id] || 0;
       const delta = to - streetBet;
       if (delta <= 0 || delta > p.stack) throw new GameError('Bad amount');

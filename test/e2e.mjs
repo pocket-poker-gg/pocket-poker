@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 const BASE = process.env.BASE || 'http://127.0.0.1:8787';
 const WSBASE = BASE.replace('https://', 'wss://').replace('http://', 'ws://');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const PROTOCOL_VERSION = 2;
+let actionNo = 0;
 
 async function mkClient(code, name) {
   const c = {
@@ -19,7 +21,11 @@ async function mkClient(code, name) {
     c.waiters.forEach((w) => w());
   });
   await new Promise((res, rej) => { c.ws.on('open', res); c.ws.on('error', rej); });
-  c.send = (o) => c.ws.send(JSON.stringify(o));
+  c.send = (o) => {
+    const m = { ...o, protocolVersion: PROTOCOL_VERSION };
+    if (m.t === 'action') { m.handNum = c.state.hand.num; m.expectedSeq = c.state.hand.actionSeq; m.actionId = `test-act-${++actionNo}`; }
+    c.ws.send(JSON.stringify(m));
+  };
   c.send({ t: 'join', name });
   await until(c, () => c.id && c.state);
   return c;
@@ -101,7 +107,7 @@ await sleep(200);
 // manual rejoin with token
 const bw = new WebSocket(`${WSBASE}/ws/${code}`);
 await new Promise((r) => bw.on('open', r));
-bw.send(JSON.stringify({ t: 'join', name: 'Bob', token: bTok }));
+bw.send(JSON.stringify({ t: 'join', protocolVersion: PROTOCOL_VERSION, name: 'Bob', token: bTok }));
 const rejoined = await new Promise((res) => bw.on('message', (raw) => { const m = JSON.parse(raw.toString()); if (m.t === 'welcome') res(m); }));
 assert.equal(rejoined.playerId, bId, 'reclaim same seat');
 assert.equal(rejoined.rejoined, true);
