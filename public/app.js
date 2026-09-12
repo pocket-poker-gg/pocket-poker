@@ -563,7 +563,11 @@
   // ---------- share ----------
   async function shareRoom() {
     const url = `${location.origin}/?room=${roomCode}`;
-    const data = { title: 'Pocket Poker', text: `Poker? Table code ${roomCode}`, url };
+    const data = {
+      title: `Pocket Poker · Table ${roomCode}`,
+      text: `You’re invited to my Pocket Poker table ${roomCode}. Take your seat.`,
+      url,
+    };
     try {
       if (navigator.share) { await navigator.share(data); return; }
       throw 0;
