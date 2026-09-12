@@ -122,14 +122,14 @@
   // hand-tuned layouts: slot 0 is me (bottom center); opponents run
   // clockwise from lower-left, over the top, down the right side
   const SEAT_LAYOUTS = {
-    1: [{ x: 50, y: 16 }],
-    2: [{ x: 27, y: 21 }, { x: 73, y: 21 }],
-    3: [{ x: 17, y: 30 }, { x: 50, y: 15.5 }, { x: 83, y: 30 }],
-    4: [{ x: 14, y: 38 }, { x: 27, y: 17.5 }, { x: 73, y: 17.5 }, { x: 86, y: 38 }],
-    5: [{ x: 12, y: 44 }, { x: 21, y: 21 }, { x: 50, y: 15 }, { x: 79, y: 21 }, { x: 88, y: 44 }],
-    6: [{ x: 11.5, y: 48 }, { x: 17, y: 27 }, { x: 34, y: 15.5 }, { x: 66, y: 15.5 }, { x: 83, y: 27 }, { x: 88.5, y: 48 }],
-    7: [{ x: 11, y: 51 }, { x: 14, y: 33 }, { x: 25, y: 17.5 }, { x: 50, y: 14.5 }, { x: 75, y: 17.5 }, { x: 86, y: 33 }, { x: 88.5, y: 51 }],
-    8: [{ x: 11, y: 53 }, { x: 12.5, y: 36 }, { x: 20, y: 19.5 }, { x: 34, y: 14.5 }, { x: 66, y: 14.5 }, { x: 80, y: 19.5 }, { x: 87.5, y: 36 }, { x: 88.5, y: 53 }],
+    1: [{ x: 50, y: 15.5, a: 'down' }],
+    2: [{ x: 28, y: 20, a: 'down' }, { x: 72, y: 20, a: 'down' }],
+    3: [{ x: 17, y: 32, a: 'side' }, { x: 50, y: 15, a: 'down' }, { x: 83, y: 32, a: 'side' }],
+    4: [{ x: 15, y: 36, a: 'side' }, { x: 29, y: 17, a: 'down' }, { x: 71, y: 17, a: 'down' }, { x: 85, y: 36, a: 'side' }],
+    5: [{ x: 13, y: 36, a: 'side' }, { x: 25, y: 16.5, a: 'down' }, { x: 50, y: 14, a: 'down' }, { x: 75, y: 16.5, a: 'down' }, { x: 87, y: 36, a: 'side' }],
+    6: [{ x: 12, y: 36, a: 'side' }, { x: 18, y: 20, a: 'down' }, { x: 36, y: 13.5, a: 'down' }, { x: 64, y: 13.5, a: 'down' }, { x: 82, y: 20, a: 'down' }, { x: 88, y: 36, a: 'side' }],
+    7: [{ x: 12, y: 53, a: 'low' }, { x: 13.5, y: 34, a: 'side' }, { x: 23, y: 17.5, a: 'down' }, { x: 50, y: 13, a: 'down' }, { x: 77, y: 17.5, a: 'down' }, { x: 86.5, y: 34, a: 'side' }, { x: 88, y: 53, a: 'low' }],
+    8: [{ x: 12, y: 53, a: 'low' }, { x: 12.5, y: 36, a: 'side' }, { x: 19.5, y: 18.5, a: 'down' }, { x: 33, y: 13, a: 'down' }, { x: 67, y: 13, a: 'down' }, { x: 80.5, y: 18.5, a: 'down' }, { x: 87.5, y: 36, a: 'side' }, { x: 88, y: 53, a: 'low' }],
   };
   function seatPos(slot, total) {
     if (slot === 0) return { x: 50, y: 82 };
@@ -146,6 +146,39 @@
     const dx = (cx - pos.x) / 100 * W, dy = (cy - pos.y) / 100 * H;
     const len = Math.hypot(dx, dy) || 1;
     return { x: dx / len, y: dy / len };
+  }
+
+  // unit vector a seat's attachments (cards, bet, dealer button) grow along.
+  // 'down' seats stack below the pill toward the felt center (horizontal
+  // component clamped so neighbors never collide); 'side' and 'low' seats
+  // hang cards straight inward of the pill and bets just below them.
+  function seatAxis(pos) {
+    if (pos.a === 'down') {
+      const d = dirToCenter(pos);
+      const cx = Math.max(-0.42, Math.min(0.42, d.x));
+      const len = Math.hypot(cx, d.y) || 1;
+      return { x: cx / len, y: d.y / len };
+    }
+    return { x: pos.x < 50 ? 1 : -1, y: 0 };
+  }
+
+  // px offsets for a seat's attachments, keyed by arrangement
+  function seatAttach(pos) {
+    const a = seatAxis(pos);
+    if (pos.a === 'down') {
+      const t = { x: -a.y, y: a.x };
+      return {
+        cards: { x: a.x * 48, y: a.y * 48 },
+        bet: { x: a.x * 82, y: a.y * 82 },
+        dealer: { x: a.x * 20 + t.x * 30, y: a.y * 20 + t.y * 30 },
+      };
+    }
+    const s = a.x; // +1 grows right (left-side seat), -1 grows left
+    return {
+      cards: { x: s * 56, y: 2 },
+      bet: { x: s * (pos.a === 'low' ? 34 : 40), y: pos.a === 'low' ? 34 : 18 },
+      dealer: { x: s * 46, y: -26 },
+    };
   }
 
   // ---------- diffing ----------
@@ -196,7 +229,10 @@
       $('potVal').textContent = fmt(st.hand.pot);
       const sl = $('streetLabel');
       sl.textContent = (st.status === 'playing' && st.hand.street !== 'preflop') ? st.hand.street : '';
-    } else potLine.classList.add('hidden');
+    } else {
+      potLine.classList.add('hidden');
+      $('streetLabel').textContent = '';
+    }
 
     // community
     const com = $('community');
@@ -234,7 +270,6 @@
     ordered.forEach((p, i) => {
       if (p.id === myId) return;
       const pos = seatPos(i, players.length);
-      const dir = dirToCenter(pos);
       const el = document.createElement('div');
       el.className = 'seat'
         + (p.folded ? ' folded' : '')
@@ -257,13 +292,13 @@
 
       // hole cards, offset toward table center
       const inGame = p.inHand && st.status !== 'lobby' && !p.folded;
+      const attach = seatAttach(pos);
       if (inGame) {
         const hole = document.createElement('div');
         hole.className = 'hole';
-        const hd = 60 + 26 * Math.abs(dir.x);
         hole.style.left = '50%';
         hole.style.top = '50%';
-        hole.style.transform = `translate(-50%,-50%) translate(${(dir.x * hd).toFixed(1)}px, ${(dir.y * hd).toFixed(1)}px)`;
+        hole.style.transform = `translate(-50%,-50%) translate(${attach.cards.x.toFixed(1)}px, ${attach.cards.y.toFixed(1)}px)`;
         if (p.cards) {
           p.cards.forEach((c, ci) => {
             const cls = diff.revealedNow && !suppressFx ? 'reveal' : '';
@@ -283,10 +318,9 @@
         const db = document.createElement('div');
         db.className = 'dbtn';
         db.textContent = 'D';
-        const dd = 36, pp = 26;
         db.style.left = '50%';
         db.style.top = '50%';
-        db.style.transform = `translate(-50%,-50%) translate(${(dir.x * dd - dir.y * pp).toFixed(1)}px, ${(dir.y * dd + dir.x * pp).toFixed(1)}px)`;
+        db.style.transform = `translate(-50%,-50%) translate(${attach.dealer.x.toFixed(1)}px, ${attach.dealer.y.toFixed(1)}px)`;
         el.appendChild(db);
       }
 
@@ -298,10 +332,9 @@
         bet.className = 'bet' + (isNewBet && !suppressFx ? ' new' : '');
         bet.dataset.pid = p.id;
         bet.innerHTML = `${CHIP}<span>${fmt(p.bet)}</span>`;
-        const bd = 100 + 24 * Math.abs(dir.x);
         bet.style.left = '50%';
         bet.style.top = '50%';
-        bet.style.transform = `translate(-50%,-50%) translate(${(dir.x * bd).toFixed(1)}px, ${(dir.y * bd).toFixed(1)}px)`;
+        bet.style.transform = `translate(-50%,-50%) translate(${attach.bet.x.toFixed(1)}px, ${attach.bet.y.toFixed(1)}px)`;
         el.appendChild(bet);
       }
 

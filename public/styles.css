@@ -149,15 +149,15 @@ button { touch-action: manipulation; }
 }
 #center {
   position: absolute; left: 50%; top: 45.5%; transform: translate(-50%, -50%);
-  display: flex; flex-direction: column; align-items: center; gap: 16px; z-index: 5;
+  display: flex; flex-direction: column; align-items: center; gap: 13px; z-index: 5;
 }
-.pot-line { display: flex; align-items: center; gap: 10px; }
+.pot-line { display: flex; align-items: center; }
 .community { display: flex; gap: 8px; }
 .street-label {
   color: var(--t3); font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+  margin-top: -3px;
 }
 .street-label:empty { display: none; }
-.street-label:not(:empty) + .pot-pill::before { content: ""; }
 .pot-pill {
   display: inline-flex; align-items: center; gap: 7px;
   background: rgba(17, 17, 20, 0.85); backdrop-filter: blur(10px);
@@ -166,7 +166,6 @@ button { touch-action: manipulation; }
   color: var(--t1);
 }
 .pot-pill .chipglyph { color: var(--t2); }
-.pot-line.divider-dot .street-label:not(:empty)::after { content: ""; }
 
 /* ---------- cards ---------- */
 .pcard {
@@ -239,7 +238,9 @@ button { touch-action: manipulation; }
   border-radius: 2px; background: rgba(255, 255, 255, 0.14); overflow: hidden;
 }
 .seat .timerbar i { display: block; height: 100%; width: 100%; background: #fff; border-radius: 2px; }
-.seat .dbtn {
+.seat .hole { z-index: 2; }
+.seat .bet { z-index: 3; }
+.seat .dbtn { z-index: 4;
   position: absolute; width: 19px; height: 19px; border-radius: 50%;
   background: var(--t1); color: #000; font-size: 10px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
