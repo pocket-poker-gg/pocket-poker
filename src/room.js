@@ -1,5 +1,5 @@
 import {
-  createGame, join, addBot, act, startHand, kick, rebuy, availableActions,
+  createGame, join, addBot, act, startHand, kick, rebuy, availableActions, setAvatar,
   markConnected, timeoutAct, publicState, GameError,
 } from './engine.js';
 import { decideBotAction } from './bots.js';
@@ -110,7 +110,7 @@ export class PokerRoom {
           if (++bucket.count > 12) throw new GameError('Too many join attempts - try again shortly');
           this.rate.set(`join:${peer}`, bucket);
         }
-        const { player, token, rejoined } = join(this.state, { name: msg.name, token: msg.token });
+        const { player, token, rejoined } = join(this.state, { name: msg.name, token: msg.token, avatar: msg.avatar });
         // One active transport owns a human seat. Close stale transports before binding.
         for (const [other, otherPid] of this.sessions) {
           if (other !== ws && otherPid === player.id) {
@@ -153,6 +153,7 @@ export class PokerRoom {
         return;
       }
       case 'rebuy': rebuy(this.state, pid); return;
+      case 'avatar': setAvatar(this.state, pid, msg.avatar); return;
       case 'kick': kick(this.state, pid, msg.playerId); return;
       case 'restart': {
         if (pid !== this.state.hostId) throw new GameError('Only the host can restart');

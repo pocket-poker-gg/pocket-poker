@@ -22,6 +22,90 @@
   const feedQueue = [];
   let feedBusy = false;
 
+  // ---------- avatars ----------
+  const AV = window.PocketAvatar;
+  const AV_LABEL = { t: 'Tone', f: 'Face', e: 'Eyes', b: 'Brows', m: 'Mouth', h: 'Hair', g: 'Glasses' };
+  const AV_NAMES = {
+    t: ['Porcelain', 'Light', 'Medium', 'Deep', 'Onyx'],
+    f: ['Round', 'Oval', 'Wide', 'Square'],
+    e: ['Dots', 'Round', 'Happy', 'Relaxed', 'Wide', 'Wink'],
+    b: ['None', 'Straight', 'Arched', 'Angled', 'Thick'],
+    m: ['Smile', 'Grin', 'Soft', 'Flat', 'Open', 'Smirk'],
+    h: ['Bald', 'Crop', 'Side part', 'Fringe', 'Curly', 'Spiky'],
+    g: ['None', 'Round', 'Square', 'Shades'],
+  };
+  let myAvatar = null;
+  try {
+    const raw = localStorage.getItem('pp_avatar');
+    if (raw) { const parsed = JSON.parse(raw); if (AV.isValid(parsed)) myAvatar = parsed; }
+  } catch {}
+  let avDraft = null;
+
+  function avatarFor(p) {
+    return (p.avatar && AV.isValid(p.avatar)) ? p.avatar : AV.defaultAvatar(p.name);
+  }
+  function avatarEl(spec, cls) {
+    const el = document.createElement('div');
+    el.className = cls;
+    el.innerHTML = AV.svg(spec);
+    return el;
+  }
+  function currentName() {
+    return $('nameInput').value.trim() || localStorage.getItem('pp_name') || 'Player';
+  }
+
+  function refreshAvatarChrome() {
+    const spec = myAvatar || AV.defaultAvatar(currentName());
+    $('homeAvatar').innerHTML = AV.svg(spec);
+    const meAv = $('meAvatar');
+    if (meAv) { meAv.innerHTML = AV.svg(spec); }
+  }
+
+  function openAvatarMaker() {
+    avDraft = { ...(myAvatar || AV.defaultAvatar(currentName())) };
+    const rows = $('avRows');
+    rows.innerHTML = '';
+    for (const k of Object.keys(AV.COUNTS)) {
+      const row = document.createElement('div');
+      row.className = 'av-row';
+      row.innerHTML = `
+        <span class="av-label">${AV_LABEL[k]}</span>
+        <button class="av-step" data-k="${k}" data-d="-1" aria-label="Previous ${AV_LABEL[k]}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg>
+        </button>
+        <span class="av-val" data-k="${k}">${AV_NAMES[k][avDraft[k]]}</span>
+        <button class="av-step" data-k="${k}" data-d="1" aria-label="Next ${AV_LABEL[k]}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5.5 6.5 6.5-6.5 6.5"/></svg>
+        </button>`;
+      rows.appendChild(row);
+    }
+    rows.querySelectorAll('.av-step').forEach((b) => {
+      b.onclick = () => {
+        const k = b.dataset.k;
+        const n = AV.COUNTS[k];
+        avDraft[k] = (avDraft[k] + Number(b.dataset.d) + n) % n;
+        rows.querySelector(`.av-val[data-k="${k}"]`).textContent = AV_NAMES[k][avDraft[k]];
+        paintAvatarPreview();
+      };
+    });
+    paintAvatarPreview();
+    show('avatarSheet');
+  }
+
+  function paintAvatarPreview() {
+    const pv = $('avPreview');
+    pv.innerHTML = AV.svg(avDraft);
+    pv.classList.remove('swap');
+    void pv.offsetWidth;
+    pv.classList.add('swap');
+  }
+
+  function syncAllAvRowValues() {
+    $('avRows').querySelectorAll('.av-val').forEach((el) => {
+      el.textContent = AV_NAMES[el.dataset.k][avDraft[el.dataset.k]];
+    });
+  }
+
   const params = new URLSearchParams(location.search);
   const urlRoom = (params.get('room') || '').toUpperCase();
 
@@ -79,7 +163,7 @@
     ws.onopen = () => {
       reconnectDelay = 800;
       hide('connOverlay');
-      ws.send(JSON.stringify({ t: 'join', protocolVersion: PROTOCOL_VERSION, name, token: myToken }));
+      ws.send(JSON.stringify({ t: 'join', protocolVersion: PROTOCOL_VERSION, name, token: myToken, avatar: myAvatar || undefined }));
     };
     ws.onmessage = (ev) => {
       let msg;
@@ -279,6 +363,8 @@
       el.style.left = pos.x + '%';
       el.style.top = pos.y + '%';
 
+      el.appendChild(avatarEl(avatarFor(p), 'avatar'));
+
       const pill = document.createElement('div');
       pill.className = 'pill';
       pill.innerHTML = `
@@ -382,6 +468,16 @@
       $('bestHandValue').textContent = '';
     }
     $('meInfo').classList.remove('hidden');
+    let meAv = $('meAvatar');
+    if (!meAv) {
+      meAv = avatarEl(avatarFor(me), 'me-avatar');
+      meAv.id = 'meAvatar';
+      meAv.title = 'Change avatar';
+      meAv.onclick = openAvatarMaker;
+      $('meInfo').insertBefore(meAv, $('meName'));
+    } else {
+      meAv.innerHTML = AV.svg(avatarFor(me));
+    }
     $('meName').textContent = me.name;
     $('meStack').textContent = fmt(me.stack);
     // my turn timer track
@@ -466,13 +562,14 @@
       const li = document.createElement('li');
       li.style.setProperty('--d', (i * 0.04) + 's');
       li.className = 'rise';
-      li.innerHTML = `
+      li.appendChild(avatarEl(avatarFor(p), 'lobby-avatar'));
+      li.insertAdjacentHTML('beforeend', `
         <span class="dot${p.connected ? '' : ' off'}"></span>
         <span class="who">${escapeHtml(p.name)}</span>
         ${p.isHost ? '<span class="badge">host</span>' : ''}
         ${p.isBot ? '<span class="badge">bot</span>' : ''}
         ${st.hostId === myId && p.id !== myId ? '<button class="kick" title="Remove" aria-label="Remove">&times;</button>' : ''}
-      `;
+      `);
       const kickBtn = li.querySelector('.kick');
       if (kickBtn) kickBtn.onclick = () => sendMsg({ t: 'kick', playerId: p.id });
       ul.appendChild(li);
@@ -666,6 +763,16 @@
     if (roomCode) localStorage.removeItem(tokenKey(roomCode));
     location.href = '/';
   };
+  $('homeAvatar').onclick = openAvatarMaker;
+  $('menuAvatar').onclick = () => { hide('menuSheet'); openAvatarMaker(); };
+  $('avShuffle').onclick = () => { avDraft = AV.shuffleAvatar(); syncAllAvRowValues(); paintAvatarPreview(); };
+  $('avDone').onclick = () => {
+    myAvatar = { ...avDraft };
+    try { localStorage.setItem('pp_avatar', JSON.stringify(myAvatar)); } catch {}
+    refreshAvatarChrome();
+    if (ws && ws.readyState === 1 && myId) sendMsg({ t: 'avatar', avatar: myAvatar });
+    hide('avatarSheet');
+  };
   $('addBotBtn').onclick = () => sendMsg({ t: 'add_bot' });
   $('startBtn').onclick = () => sendMsg({ t: 'start' });
   $('nextHandBtn').onclick = () => sendMsg({ t: 'start' });
@@ -674,6 +781,8 @@
   // ---------- boot ----------
   const savedName = localStorage.getItem('pp_name');
   if (savedName) $('nameInput').value = savedName;
+  refreshAvatarChrome();
+  $('nameInput').addEventListener('input', () => { if (!myAvatar) refreshAvatarChrome(); });
   if (urlRoom && urlRoom.length === 4) {
     const tok = localStorage.getItem(tokenKey(urlRoom));
     if (tok && savedName) {

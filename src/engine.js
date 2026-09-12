@@ -1,6 +1,7 @@
 // Pocket Poker engine - pure, no I/O. Server-authoritative state machine for NLHE.
 import pokersolver from 'pokersolver';
 import { BOT_PROFILES } from './bots.js';
+import { sanitizeAvatar } from './avatar.js';
 const { Hand } = pokersolver;
 
 const SUITS = ['c', 'd', 'h', 's'];
@@ -60,13 +61,16 @@ function log(state, msg) {
   if (state.log.length > 30) state.log.splice(0, state.log.length - 30);
 }
 
-export function join(state, { name, token }) {
+export function join(state, { name, token, avatar }) {
   name = String(name || '').trim().slice(0, 16) || 'Player';
+  const av = avatar === undefined ? undefined : sanitizeAvatar(avatar);
+  if (av === null) throw new GameError('Invalid avatar');
   if (token) {
     const ex = state.players.find((p) => p.token === token);
     if (ex) {
       ex.connected = true;
       if (name && name !== 'Player') ex.name = name;
+      if (av) ex.avatar = av;
       return { player: ex, token: ex.token, rejoined: true };
     }
   }
@@ -82,6 +86,7 @@ export function join(state, { name, token }) {
     stack: state.config.stack,
     connected: true,
     sittingOut: false,
+    avatar: av || null,
   };
   state.players.push(p);
   if (!state.hostId) state.hostId = p.id;
@@ -146,6 +151,14 @@ export function rebuy(state, id) {
   p.stack = state.config.stack;
   p.sittingOut = false;
   log(state, `${p.name} rebought to ${p.stack}`);
+}
+
+export function setAvatar(state, id, avatar) {
+  const p = state.players.find((x) => x.id === id);
+  if (!p) throw new GameError('Not at table');
+  const av = sanitizeAvatar(avatar);
+  if (!av) throw new GameError('Invalid avatar');
+  p.avatar = av;
 }
 
 function inHand(state, id) {
@@ -680,6 +693,7 @@ export function publicState(state, forId) {
       sittingOut: p.sittingOut,
       isHost: p.id === state.hostId,
       isBot: !!p.isBot,
+      avatar: p.avatar || null,
       bet: h ? h.streetBets[p.id] || 0 : 0,
       contrib: h ? h.contrib[p.id] || 0 : 0,
       folded: h ? !!h.folded[p.id] : false,

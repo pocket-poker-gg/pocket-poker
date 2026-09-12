@@ -101,6 +101,17 @@ button { touch-action: manipulation; }
 .brand h1 { font-size: 32px; font-weight: 750; letter-spacing: -0.6px; }
 .tagline { color: var(--t2); font-size: 15px; margin-top: 9px; line-height: 1.5; }
 .panel { display: flex; flex-direction: column; gap: 12px; }
+.name-row { display: flex; gap: 10px; align-items: stretch; }
+.name-row .text-input { flex: 1; }
+.avatar-btn {
+  appearance: none; border: none; cursor: pointer; flex: 0 0 auto;
+  width: 53px; border-radius: 14px; overflow: hidden;
+  background: var(--s2); border: 1px solid var(--hair);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.08s var(--ease), border-color 0.18s var(--ease);
+}
+.avatar-btn:active { transform: scale(0.94); }
+.avatar-btn svg { width: 44px; height: 44px; display: block; }
 .divider { display: flex; align-items: center; gap: 12px; color: var(--t3); font-size: 13px; margin: 8px 0; }
 .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--hair); }
 .join-row { display: flex; gap: 10px; }
@@ -238,6 +249,20 @@ button { touch-action: manipulation; }
   border-radius: 2px; background: rgba(255, 255, 255, 0.14); overflow: hidden;
 }
 .seat .timerbar i { display: block; height: 100%; width: 100%; background: #fff; border-radius: 2px; }
+.seat .avatar { z-index: 0; }
+.seat .avatar {
+  position: absolute; left: 50%; top: 50%;
+  width: 27px; height: 27px; border-radius: 50%;
+  transform: translate(-50%, -50%) translateY(-28px);
+  background: var(--s2); border: 1px solid var(--hair2);
+  overflow: hidden;
+  transition: border-color 0.22s var(--ease), opacity 0.22s;
+}
+.seat .avatar svg { width: 100%; height: 100%; display: block; }
+.seat.acting .avatar { border-color: rgba(255, 255, 255, 0.85); }
+.seat.winner .avatar { border-color: #fff; }
+.seat.folded .avatar { opacity: 0.34; }
+.seat.offline .avatar { opacity: 0.62; }
 .seat .hole { z-index: 2; }
 .seat .bet { z-index: 3; }
 .seat .dbtn { z-index: 4;
@@ -304,6 +329,46 @@ button { touch-action: manipulation; }
 .best-hand span { color: var(--t3); font-size: 9px; font-weight: 750; letter-spacing: 1.1px; text-transform: uppercase; }
 .best-hand strong { color: var(--t1); font-size: 12px; font-weight: 650; letter-spacing: -0.05px; }
 .me-info { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 14.5px; letter-spacing: -0.1px; }
+.me-avatar {
+  width: 27px; height: 27px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+  background: var(--s2); border: 1px solid var(--hair2); cursor: pointer;
+}
+.me-avatar svg { width: 100%; height: 100%; display: block; }
+.lobby-avatar {
+  width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+  background: var(--s2); border: 1px solid var(--hair2);
+}
+.lobby-avatar svg { width: 100%; height: 100%; display: block; }
+
+/* avatar maker */
+.av-sheet { gap: 14px; }
+.av-preview-wrap { display: flex; justify-content: center; padding: 4px 0 2px; }
+.av-preview {
+  width: 128px; height: 128px; border-radius: 50%; overflow: hidden;
+  background: var(--s2); border: 1px solid var(--hair2);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.av-preview svg { width: 100%; height: 100%; display: block; }
+.av-preview.swap svg { animation: av-pop 0.22s var(--spring); }
+@keyframes av-pop { 0% { transform: scale(0.9); opacity: 0.55; } 100% { transform: scale(1); opacity: 1; } }
+.av-rows { display: flex; flex-direction: column; }
+.av-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 2px; border-top: 1px solid var(--hair);
+}
+.av-row:first-child { border-top: none; }
+.av-row .av-label { flex: 1; font-size: 14.5px; font-weight: 600; color: var(--t2); }
+.av-row .av-val {
+  min-width: 76px; text-align: center; font-size: 14px; font-weight: 650; color: var(--t1);
+}
+.av-step {
+  appearance: none; border: none; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--s3); color: var(--t1);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.08s var(--ease);
+}
+.av-step:active { transform: scale(0.9); }
 .me-dot { color: var(--t3); }
 .stack-pill { color: var(--t2); font-variant-numeric: tabular-nums; font-weight: 650; }
 .actions { display: flex; gap: 10px; width: min(420px, 92vw); }

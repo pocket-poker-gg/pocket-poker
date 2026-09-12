@@ -47,7 +47,10 @@
         <p class="tagline">No-limit hold&rsquo;em with friends.<br>No accounts. No installs. Play money.</p>
       </div>
       <div class="panel rise" style="--d:.12s">
-        <input id="nameInput" class="text-input" maxlength="16" autocomplete="off" autocorrect="off" placeholder="Your name" enterkeyhint="go">
+        <div class="name-row">
+          <button id="homeAvatar" class="avatar-btn" title="Make your avatar" aria-label="Make your avatar"></button>
+          <input id="nameInput" class="text-input" maxlength="16" autocomplete="off" autocorrect="off" placeholder="Your name" enterkeyhint="go">
+        </div>
         <button id="createBtn" class="btn primary big">Create a table</button>
         <div class="divider"><span>or join with a code</span></div>
         <form id="joinForm" class="join-row">
@@ -167,6 +170,7 @@
         <h2>Table</h2>
         <div class="menu-list">
           <button id="menuShare" class="menu-item">Invite friends</button>
+          <button id="menuAvatar" class="menu-item">Change avatar</button>
           <button id="menuRebuy" class="menu-item hidden">Rebuy to full stack</button>
           <button id="menuRestart" class="menu-item hidden">Restart game</button>
           <button id="menuLeave" class="menu-item warn">Leave table</button>
@@ -175,11 +179,26 @@
       </div>
     </div>
 
+    <div id="avatarSheet" class="overlay hidden">
+      <div class="sheet av-sheet">
+        <div class="grabber"></div>
+        <h2>Your avatar</h2>
+        <div class="av-preview-wrap"><div id="avPreview" class="av-preview"></div></div>
+        <div id="avRows" class="av-rows"></div>
+        <button id="avShuffle" class="btn ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4.5"/><circle cx="8.4" cy="8.4" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.6" cy="15.6" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.6" cy="8.4" r="1.5" fill="currentColor" stroke="none"/><circle cx="8.4" cy="15.6" r="1.5" fill="currentColor" stroke="none"/></svg>
+          Shuffle
+        </button>
+        <button id="avDone" class="btn primary big">Done</button>
+      </div>
+    </div>
+
     <div id="connOverlay" class="overlay dark hidden">
       <div class="conn-box"><div class="spinner"></div><p>Reconnecting&hellip;</p></div>
     </div>
   </section>
 </div>
+<script src="/avatar.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>
