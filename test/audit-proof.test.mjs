@@ -82,5 +82,5 @@ test('short all-in does not reopen a player who already acted', () => {
   while(g.status==='playing' && g.hand.street==='preflop' && g.hand.acting!==first) {
     const av=availableActions(g,g.hand.acting); act(g,g.hand.acting,av.owe?{kind:'call'}:{kind:'check'});
   }
-  if(g.status==='playing' && g.hand.street==='preflop') assert.equal(availableActions(g,first).canRaise,false);
+  if(g.status==='playing' && g.hand.street==='preflop') assert.ok(!availableActions(g,first).canRaise);
 });

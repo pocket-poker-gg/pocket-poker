@@ -49,7 +49,8 @@ export class PokerRoom {
       return new Response(null, { status: this.state ? 204 : 404 });
     }
     if (!this.state) return new Response('Table not found', { status: 404 });
-    const expected = this.env.PUBLIC_ORIGIN || url.origin;
+    const configured = this.env.PUBLIC_ORIGIN;
+    const expected = configured && url.hostname.endsWith('.workers.dev') ? configured : url.origin;
     const origin = request.headers.get('Origin');
     if (!origin || origin !== expected) return new Response('Forbidden', { status: 403 });
     if ((request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket')

@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 const BASE = process.env.BASE || 'http://127.0.0.1:8787';
 const WSBASE = BASE.replace('https://', 'wss://').replace('http://', 'ws://');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const PROTOCOL_VERSION = 2; let actionNo = 0;
 
 async function mkClient(code, name) {
   const c = { name, id: null, token: null, state: null, log: [], states: [], ws: new WebSocket(`${WSBASE}/ws/${code}`), waiters: [] };
@@ -19,7 +20,7 @@ async function mkClient(code, name) {
     c.waiters.forEach((w) => w());
   });
   await new Promise((res, rej) => { c.ws.on('open', res); c.ws.on('error', rej); });
-  c.send = (o) => c.ws.send(JSON.stringify(o));
+  c.send = (o) => { const m={...o,protocolVersion:PROTOCOL_VERSION}; if(m.t==='action'){m.handNum=c.state.hand.num;m.expectedSeq=c.state.hand.actionSeq;m.actionId=`bot-act-${++actionNo}`;} c.ws.send(JSON.stringify(m)); };
   c.send({ t: 'join', name });
   await until(c, () => c.id && c.state);
   return c;
