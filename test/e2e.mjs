@@ -120,13 +120,20 @@ await until(a, () => a.state.status === 'playing' && a.state.handNum === 2);
 console.log('hand 2 started OK');
 
 // avatars over the wire: set, broadcast, persist across reconnect
+// legacy spec without a style key canonicalizes to s:0 (male)
 const spec = { t: 2, f: 1, e: 3, b: 4, m: 5, h: 2, g: 1 };
+const canon = JSON.stringify({ s: 0, ...spec });
 a.send({ t: 'avatar', avatar: spec });
-await until(a, () => JSON.stringify(a.state.players.find((p) => p.id === a.id)?.avatar) === JSON.stringify(spec));
-await until(c3, () => JSON.stringify(c3.state.players.find((p) => p.id === a.id)?.avatar) === JSON.stringify(spec));
+await until(a, () => JSON.stringify(a.state.players.find((p) => p.id === a.id)?.avatar) === canon);
+await until(c3, () => JSON.stringify(c3.state.players.find((p) => p.id === a.id)?.avatar) === canon);
 a.send({ t: 'avatar', avatar: { ...spec, t: 99 } });
 await until(a, () => a.log.some((l) => l.includes('Invalid avatar')));
-assert.equal(JSON.stringify(a.state.players.find((p) => p.id === a.id)?.avatar), JSON.stringify(spec), 'invalid avatar must not clobber');
+assert.equal(JSON.stringify(a.state.players.find((p) => p.id === a.id)?.avatar), canon, 'invalid avatar must not clobber');
+// female style round-trips and broadcasts
+const femSpec = { s: 1, ...spec };
+a.send({ t: 'avatar', avatar: femSpec });
+await until(a, () => JSON.stringify(a.state.players.find((p) => p.id === a.id)?.avatar) === JSON.stringify(femSpec));
+await until(c3, () => JSON.stringify(c3.state.players.find((p) => p.id === a.id)?.avatar) === JSON.stringify(femSpec));
 console.log('avatars OK');
 
 console.log('\nALL E2E CHECKS PASSED');
