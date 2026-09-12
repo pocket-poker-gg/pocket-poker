@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { createGame, join, setAvatar, publicState, GameError } from '../src/engine.js';
 import { AVATAR_COUNTS, sanitizeAvatar } from '../src/avatar.js';
 
-const GOOD = { t: 2, f: 1, e: 3, b: 4, m: 5, h: 2, g: 1 };
+const GOOD = { s: 1, t: 2, f: 1, e: 3, b: 4, m: 5, h: 2, g: 1 };
+const LEGACY = { t: 2, f: 1, e: 3, b: 4, m: 5, h: 2, g: 1 }; // pre-style spec
 
 const clientSrc = readFileSync(new URL('../public/avatar.js', import.meta.url), 'utf8');
 const client = (await import(
@@ -17,6 +18,8 @@ test('server/client component counts stay in sync', () => {
 
 test('sanitizeAvatar accepts canonical specs, rejects malformed ones', () => {
   assert.deepEqual(sanitizeAvatar(GOOD), GOOD);
+  assert.deepEqual(sanitizeAvatar(LEGACY), { s: 0, ...LEGACY }); // style defaults to male
+  assert.equal(sanitizeAvatar({ ...GOOD, s: 2 }), null); // style out of range
   assert.equal(sanitizeAvatar(null), null);
   assert.equal(sanitizeAvatar('face'), null);
   assert.equal(sanitizeAvatar([1, 2, 3]), null);
@@ -73,12 +76,15 @@ test('client default avatars are deterministic, valid, and distinct', () => {
   assert.ok(sigs.size >= names.length - 1, 'defaults should almost always differ');
 });
 
-test('client renders every component variant', () => {
-  for (const k of Object.keys(client.COUNTS)) {
-    for (let v = 0; v < client.COUNTS[k]; v++) {
-      const a = { t: 0, f: 0, e: 0, b: 0, m: 0, h: 0, g: 0, [k]: v };
-      const s = client.svg(a);
-      assert.ok(s.startsWith('<svg') && s.endsWith('</svg>'), `${k}=${v}`);
+test('client renders every component variant in both styles', () => {
+  for (const style of [0, 1]) {
+    for (const k of Object.keys(client.COUNTS)) {
+      for (let v = 0; v < client.COUNTS[k]; v++) {
+        const a = { s: style, t: 0, f: 0, e: 0, b: 0, m: 0, h: 0, g: 0, [k]: v };
+        const s = client.svg(a);
+        assert.ok(s.startsWith('<svg') && s.endsWith('</svg>'), `${k}=${v}`);
+        assert.ok(s.includes('av-eyes'), `${k}=${v} carries the blink group`);
+      }
     }
   }
 });

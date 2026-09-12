@@ -24,16 +24,25 @@
 
   // ---------- avatars ----------
   const AV = window.PocketAvatar;
-  const AV_LABEL = { t: 'Tone', f: 'Face', e: 'Eyes', b: 'Brows', m: 'Mouth', h: 'Hair', g: 'Glasses' };
+  const AV_LABEL = { s: 'Style', t: 'Tone', f: 'Face', e: 'Eyes', b: 'Brows', m: 'Mouth', h: 'Hair', g: 'Glasses' };
   const AV_NAMES = {
+    s: ['Male', 'Female'],
     t: ['Porcelain', 'Light', 'Medium', 'Deep', 'Onyx'],
     f: ['Round', 'Oval', 'Wide', 'Square'],
-    e: ['Dots', 'Round', 'Happy', 'Relaxed', 'Wide', 'Wink'],
-    b: ['None', 'Straight', 'Arched', 'Angled', 'Thick'],
-    m: ['Smile', 'Grin', 'Soft', 'Flat', 'Open', 'Smirk'],
-    h: ['Bald', 'Crop', 'Side part', 'Fringe', 'Curly', 'Spiky'],
-    g: ['None', 'Round', 'Square', 'Shades'],
+    e: ['Dots', 'Big', 'Happy', 'Relaxed', 'Wide', 'Wink', 'Sleepy', 'Starry'],
+    b: ['None', 'Straight', 'Arched', 'Angled', 'Thick', 'Worried'],
+    m: ['Smile', 'Grin', 'Soft', 'Flat', 'Open', 'Smirk', 'Tongue', 'Laugh'],
+    h: [
+      ['Bald', 'Crop', 'Side part', 'Fringe', 'Curly', 'Spiky', 'Mop', 'Bun'],
+      ['Bald', 'Pixie', 'Long', 'Fringe', 'Curly', 'Bob', 'Ponytail', 'Pigtails'],
+    ],
+    g: ['None', 'Round', 'Square', 'Shades', 'Hearts'],
   };
+  // hair names depend on the picked style
+  function avName(k, v, style) {
+    const set = AV_NAMES[k];
+    return (k === 'h' ? set[style || 0] : set)[v];
+  }
   let myAvatar = null;
   try {
     const raw = localStorage.getItem('pp_avatar');
@@ -48,6 +57,8 @@
     const el = document.createElement('div');
     el.className = cls;
     el.innerHTML = AV.svg(spec);
+    // stagger idle motion per face (negative delay keeps phase across re-renders)
+    el.style.animationDelay = `-${AV.phase(AV.norm(spec))}s`;
     return el;
   }
   function currentName() {
@@ -73,7 +84,7 @@
         <button class="av-step" data-k="${k}" data-d="-1" aria-label="Previous ${AV_LABEL[k]}">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg>
         </button>
-        <span class="av-val" data-k="${k}">${AV_NAMES[k][avDraft[k]]}</span>
+        <span class="av-val" data-k="${k}">${avName(k, avDraft[k], avDraft.s)}</span>
         <button class="av-step" data-k="${k}" data-d="1" aria-label="Next ${AV_LABEL[k]}">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5.5 6.5 6.5-6.5 6.5"/></svg>
         </button>`;
@@ -84,7 +95,7 @@
         const k = b.dataset.k;
         const n = AV.COUNTS[k];
         avDraft[k] = (avDraft[k] + Number(b.dataset.d) + n) % n;
-        rows.querySelector(`.av-val[data-k="${k}"]`).textContent = AV_NAMES[k][avDraft[k]];
+        syncAllAvRowValues(); // style switch restyles the hair row
         paintAvatarPreview();
       };
     });
@@ -102,7 +113,7 @@
 
   function syncAllAvRowValues() {
     $('avRows').querySelectorAll('.av-val').forEach((el) => {
-      el.textContent = AV_NAMES[el.dataset.k][avDraft[el.dataset.k]];
+      el.textContent = avName(el.dataset.k, avDraft[el.dataset.k], avDraft.s);
     });
   }
 

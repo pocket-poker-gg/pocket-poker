@@ -130,16 +130,16 @@ button { touch-action: manipulation; }
 
 /* feed - single-line event capsule under the topbar */
 .feed {
-  position: absolute; top: calc(env(safe-area-inset-top, 0px) + 62px); left: 50%;
+  position: absolute; top: calc(env(safe-area-inset-top, 0px) + 15px); left: 50%;
   transform: translateX(-50%);
   z-index: 35; pointer-events: none;
-  max-width: 78vw;
+  max-width: 44vw;
 }
 .feed span {
   display: block;
   background: rgba(20, 20, 23, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--hair); border-radius: 999px;
-  padding: 6px 15px; font-size: 12.5px; font-weight: 600; color: var(--t1);
+  padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--t1);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   opacity: 0; transform: translateY(-6px);
@@ -221,7 +221,7 @@ button { touch-action: manipulation; }
   transition: opacity 0.25s var(--ease);
 }
 .seat .pill {
-  position: relative;
+  position: relative; z-index: 1;
   min-width: 74px; max-width: 90px; padding: 7px 12px;
   background: rgba(17, 17, 20, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--hair2);
@@ -245,18 +245,18 @@ button { touch-action: manipulation; }
 .seat .st { font-size: 11.5px; color: var(--t2); font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 1px; }
 .seat .st.allin { color: var(--t1); font-weight: 800; letter-spacing: 0.4px; }
 .seat .timerbar {
-  position: absolute; left: 8px; right: 8px; top: -5px; height: 2.5px;
+  position: absolute; left: 8px; right: 8px; bottom: -5px; height: 2.5px;
   border-radius: 2px; background: rgba(255, 255, 255, 0.14); overflow: hidden;
 }
 .seat .timerbar i { display: block; height: 100%; width: 100%; background: #fff; border-radius: 2px; }
-.seat .avatar { z-index: 0; }
 .seat .avatar {
-  position: absolute; left: 50%; top: 50%;
-  width: 27px; height: 27px; border-radius: 50%;
-  transform: translate(-50%, -50%) translateY(-28px);
-  background: var(--s2); border: 1px solid var(--hair2);
+  position: absolute; left: calc(50% - 19px); top: -32px; z-index: 5;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--s2); border: 1.5px solid var(--hair2);
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
   transition: border-color 0.22s var(--ease), opacity 0.22s;
+  animation: av-bob 3.8s ease-in-out infinite;
 }
 .seat .avatar svg { width: 100%; height: 100%; display: block; }
 .seat.acting .avatar { border-color: rgba(255, 255, 255, 0.85); }
@@ -288,6 +288,32 @@ button { touch-action: manipulation; }
 .bottag {
   font-size: 8px; font-weight: 750; text-transform: uppercase; letter-spacing: 0.8px;
   color: var(--t3); vertical-align: 2px; margin-left: 4px;
+}
+
+
+/* ---------- avatar life ---------- */
+.av-eyes {
+  transform-box: fill-box; transform-origin: center;
+  animation: av-blink 4.8s linear infinite;
+}
+@keyframes av-blink {
+  0%, 91.5%, 98.5%, 100% { transform: scaleY(1); }
+  94.5% { transform: scaleY(0.06); }
+}
+@keyframes av-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } }
+.me-avatar, .avatar-btn svg { animation: av-bob 3.8s ease-in-out infinite; }
+.seat.winner .avatar svg { animation: av-win 0.72s var(--spring) 2; }
+@keyframes av-win {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.16) rotate(-5deg); }
+  62% { transform: scale(0.95) rotate(3.5deg); }
+  100% { transform: scale(1); }
+}
+.av-preview svg { animation: av-float 3.4s ease-in-out infinite; }
+@keyframes av-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) {
+  .av-eyes, .seat .avatar, .me-avatar, .avatar-btn svg, .av-preview svg,
+  .seat.winner .avatar svg { animation: none !important; }
 }
 
 /* fx layer: chip clones flying */
@@ -330,12 +356,12 @@ button { touch-action: manipulation; }
 .best-hand strong { color: var(--t1); font-size: 12px; font-weight: 650; letter-spacing: -0.05px; }
 .me-info { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 14.5px; letter-spacing: -0.1px; }
 .me-avatar {
-  width: 27px; height: 27px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+  width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
   background: var(--s2); border: 1px solid var(--hair2); cursor: pointer;
 }
 .me-avatar svg { width: 100%; height: 100%; display: block; }
 .lobby-avatar {
-  width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+  width: 28px; height: 28px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
   background: var(--s2); border: 1px solid var(--hair2);
 }
 .lobby-avatar svg { width: 100%; height: 100%; display: block; }
