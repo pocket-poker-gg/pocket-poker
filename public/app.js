@@ -127,9 +127,9 @@
     3: [{ x: 17, y: 32, a: 'side' }, { x: 50, y: 15, a: 'down' }, { x: 83, y: 32, a: 'side' }],
     4: [{ x: 15, y: 36, a: 'side' }, { x: 29, y: 17, a: 'down' }, { x: 71, y: 17, a: 'down' }, { x: 85, y: 36, a: 'side' }],
     5: [{ x: 13, y: 36, a: 'side' }, { x: 25, y: 16.5, a: 'down' }, { x: 50, y: 14, a: 'down' }, { x: 75, y: 16.5, a: 'down' }, { x: 87, y: 36, a: 'side' }],
-    6: [{ x: 12, y: 36, a: 'side' }, { x: 18, y: 20, a: 'down' }, { x: 36, y: 13.5, a: 'down' }, { x: 64, y: 13.5, a: 'down' }, { x: 82, y: 20, a: 'down' }, { x: 88, y: 36, a: 'side' }],
-    7: [{ x: 12, y: 53, a: 'low' }, { x: 13.5, y: 34, a: 'side' }, { x: 23, y: 17.5, a: 'down' }, { x: 50, y: 13, a: 'down' }, { x: 77, y: 17.5, a: 'down' }, { x: 86.5, y: 34, a: 'side' }, { x: 88, y: 53, a: 'low' }],
-    8: [{ x: 12, y: 53, a: 'low' }, { x: 12.5, y: 36, a: 'side' }, { x: 19.5, y: 18.5, a: 'down' }, { x: 33, y: 13, a: 'down' }, { x: 67, y: 13, a: 'down' }, { x: 80.5, y: 18.5, a: 'down' }, { x: 87.5, y: 36, a: 'side' }, { x: 88, y: 53, a: 'low' }],
+    6: [{ x: 12, y: 36, a: 'side' }, { x: 18, y: 20, a: 'down' }, { x: 36, y: 14.5, a: 'down' }, { x: 64, y: 14.5, a: 'down' }, { x: 82, y: 20, a: 'down' }, { x: 88, y: 36, a: 'side' }],
+    7: [{ x: 12, y: 53, a: 'low' }, { x: 13.5, y: 34, a: 'side' }, { x: 23, y: 17.5, a: 'down' }, { x: 50, y: 14.5, a: 'down' }, { x: 77, y: 17.5, a: 'down' }, { x: 86.5, y: 34, a: 'side' }, { x: 88, y: 53, a: 'low' }],
+    8: [{ x: 12, y: 53, a: 'low' }, { x: 12.5, y: 36, a: 'side' }, { x: 19.5, y: 18.5, a: 'down' }, { x: 33, y: 14.5, a: 'down' }, { x: 67, y: 14.5, a: 'down' }, { x: 80.5, y: 18.5, a: 'down' }, { x: 87.5, y: 36, a: 'side' }, { x: 88, y: 53, a: 'low' }],
   };
   function seatPos(slot, total) {
     if (slot === 0) return { x: 50, y: 82 };
@@ -175,8 +175,8 @@
     }
     const s = a.x; // +1 grows right (left-side seat), -1 grows left
     return {
-      cards: { x: s * 56, y: 2 },
-      bet: { x: s * (pos.a === 'low' ? 34 : 40), y: pos.a === 'low' ? 34 : 18 },
+      cards: { x: s * 72, y: -4 },
+      bet: { x: s * (pos.a === 'low' ? 36 : 40), y: pos.a === 'low' ? 32 : 26 },
       dealer: { x: s * 46, y: -26 },
     };
   }
