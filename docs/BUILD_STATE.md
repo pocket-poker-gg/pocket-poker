@@ -20,3 +20,6 @@ Cloudflare's current documentation says the account `workers.dev` subdomain is c
 - Verify live HTML, image dimensions, app, a real room URL, and mobile screenshot.
 - Verify the rich card with an external Open Graph preview renderer. A true Messages screenshot may require the user's iPhone cache to refresh and is not mechanically available from Chrome.
 - Push commit to GitHub when credential path is available.
+
+## Deploy finding
+First live deploy uploaded the new assets, but Cloudflare's default asset routing served `/` before the Worker, so room-aware substitution did not run. Added `[assets].run_worker_first = true`; redeploy required. This is why live verification is part of the gate.
