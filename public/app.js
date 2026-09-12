@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  const PROTOCOL_VERSION = 2;
   const SUIT_GLYPH = { s: '♠', h: '♥', d: '♦', c: '♣' };
   const SUIT_COLOR = { h: 'red', d: 'red', s: 'black', c: 'black' };
   const CHIP = '<svg class="chipglyph" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.4"/><path d="M12 3.8v3M12 17.2v3M3.8 12h3M17.2 12h3"/></svg>';
@@ -78,11 +79,12 @@
     ws.onopen = () => {
       reconnectDelay = 800;
       hide('connOverlay');
-      ws.send(JSON.stringify({ t: 'join', name, token: myToken }));
+      ws.send(JSON.stringify({ t: 'join', protocolVersion: PROTOCOL_VERSION, name, token: myToken }));
     };
     ws.onmessage = (ev) => {
       let msg;
       try { msg = JSON.parse(ev.data); } catch { return; }
+      if (msg.protocolVersion && msg.protocolVersion !== PROTOCOL_VERSION) { feedPush('Pocket Poker updated - reload to continue', true); return; }
       if (msg.t === 'welcome') {
         myId = msg.playerId;
         myToken = msg.token;
@@ -106,7 +108,14 @@
   }
 
   function sendMsg(obj) {
-    if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj));
+    if (!ws || ws.readyState !== 1 || !lastState) return;
+    const envelope = { ...obj, protocolVersion: PROTOCOL_VERSION };
+    if (obj.t === 'action') {
+      envelope.handNum = lastState.hand?.num;
+      envelope.expectedSeq = lastState.hand?.actionSeq;
+      envelope.actionId = crypto.randomUUID();
+    }
+    ws.send(JSON.stringify(envelope));
   }
 
   // ---------- seat geometry ----------

@@ -14,3 +14,6 @@ class_name = "PokerRoom"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["PokerRoom"]
+
+[vars]
+PUBLIC_ORIGIN = "https://pocket-poker.pocket-poker-gg.workers.dev"
