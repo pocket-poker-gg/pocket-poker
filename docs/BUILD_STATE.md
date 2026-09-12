@@ -73,7 +73,7 @@ The screenshot was mathematically misleading, not a wrong winner or lost chips. 
 - The half-clipped panel at the right viewport edge in the user's screenshot is not app UI - never reproduced in any state; consistent with iOS/Safari edge chrome.
 - Deployed Worker version 9c82229b-4270-4862-a195-0c645dbc689f; main at 9a6048d + this note.
 
-## Custom avatar heads (2026-09-12, in progress)
+## Custom avatar heads (2026-09-12)
 - Deterministic monochrome SVG avatar heads: tone(5) x face(4) x eyes(6) x brows(5) x mouth(6) x hair(6) x glasses(4), all grayscale in the noir palette.
 - Client renderer in public/avatar.js (UMD, also imported by tests); server validation in src/avatar.js; counts parity locked by test.
 - Avatar spec stored server-side per player (join payload + 'avatar' message, sanitized); survives reconnect via seat token. localStorage pp_avatar pre-fills and sends on join.
@@ -81,3 +81,5 @@ The screenshot was mathematically misleading, not a wrong winner or lost chips. 
 - Avatar maker sheet: live 128px preview, per-component steppers, shuffle, Done. Entry points: home avatar button next to name input, menu sheet, tap own avatar in me area.
 - Rendering: 27px head peeking above each seat pill (behind it, z below cards/bets), 27px in me-info, 24px in lobby rows. Acting/winner rings, folded/offline dimming match the pill.
 - Tests: sanitize/join/setAvatar/publicState/rejoin engine tests, client parity + determinism + all-variant render smoke, wire-level e2e (set, broadcast, invalid rejection, no-clobber). 36/36 + e2e green locally.
+- Deployed Worker version e2cdb228-256f-4747-b7c2-207bae651aba (main 8042c1b). Verified live at 390x844: home avatar button + live name-derived default, maker sheet (steppers, shuffle, Done), lobby rows, and real bot games at 2, 4 and 6-handed from preflop through showdown - avatars stay above their own seat pill, clear of cards, bet badges, dealer button, best-hand capsule and result banner. Stored avatar survives reload and follows the player into new tables via localStorage + join payload; seat record persists via reconnect token.
+- Fix during verification: the maker sheet was initially nested inside the hidden #table section and could not open from the home screen; moved to a top-level overlay (commit 8042c1b).
