@@ -61,4 +61,6 @@ The screenshot was mathematically misleading, not a wrong winner or lost chips. 
 - Added a private player-facing `bestHand` summary computed by the authoritative evaluator from the player's hole cards plus the current board.
 - Preflop uses made-hand/high-card descriptions; flop through river uses `pokersolver`'s exact best-five description.
 - UI is an understated monochrome capsule between the player's cards and identity, hidden outside a dealt hand.
-- Added street progression and privacy regressions. Deployment and 390x844 production visual checks pending.
+- Added street progression and privacy regressions. 28/28 tests and exhaustive evaluator census green after changes.
+- Deployed Worker version `e83b7c0c-ac2b-49f8-8cf3-6542a59903aa`; local multi-client E2E passed and a live host-vs-bot game was played through showdown.
+- Verified production at 390x844 from preflop through flop, turn, river and showdown. The capsule stays below the hole cards without covering the table or action controls.
