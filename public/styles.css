@@ -293,6 +293,15 @@ button { touch-action: manipulation; }
 .mycards .pcard:last-child { transform: rotate(4deg); }
 .mycards .pcard.new:first-child { --fr: -4deg; }
 .mycards .pcard.new:last-child { --fr: 4deg; }
+.best-hand {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  min-height: 23px; padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 999px;
+  background: rgba(17, 17, 20, 0.68); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+.best-hand span { color: var(--t3); font-size: 9px; font-weight: 750; letter-spacing: 1.1px; text-transform: uppercase; }
+.best-hand strong { color: var(--t1); font-size: 12px; font-weight: 650; letter-spacing: -0.05px; }
 .me-info { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 14.5px; letter-spacing: -0.1px; }
 .me-dot { color: var(--t3); }
 .stack-pill { color: var(--t2); font-variant-numeric: tabular-nums; font-weight: 650; }

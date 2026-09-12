@@ -637,6 +637,29 @@ export function timeoutAct(state) {
   return true;
 }
 
+// ---- player-facing hand summary ----
+function rankLabel(rank) { return `${rank === 'T' ? '10' : rank}'s`; }
+
+export function describeCurrentHand(cards) {
+  if (!Array.isArray(cards) || cards.length < 2) return null;
+  if (cards.length >= 5) return Hand.solve(cards).descr;
+
+  // Before the flop there cannot be a straight, flush, or full five-card hand.
+  // Name the strongest made hand in the cards currently visible to the player.
+  const ranks = cards.map((card) => card[0]);
+  const order = '23456789TJQKA';
+  const counts = new Map();
+  for (const rank of ranks) counts.set(rank, (counts.get(rank) || 0) + 1);
+  const groups = [...counts.entries()].sort((a, b) => b[1] - a[1] || order.indexOf(b[0]) - order.indexOf(a[0]));
+  if (groups[0][1] === 4) return `Four of a Kind, ${rankLabel(groups[0][0])}`;
+  if (groups[0][1] === 3) return `Three of a Kind, ${rankLabel(groups[0][0])}`;
+  const pairs = groups.filter(([, count]) => count === 2);
+  if (pairs.length >= 2) return `Two Pair, ${rankLabel(pairs[0][0])} & ${rankLabel(pairs[1][0])}`;
+  if (pairs.length === 1) return `Pair of ${rankLabel(pairs[0][0])}`;
+  const high = ranks.sort((a, b) => order.indexOf(b) - order.indexOf(a))[0];
+  return `${high === 'T' ? '10' : high} High`;
+}
+
 // ---- client view ----
 export function publicState(state, forId) {
   const h = state.hand;
@@ -665,6 +688,7 @@ export function publicState(state, forId) {
       isDealer: h ? h.dealerId === p.id : false,
       isActing: h ? h.acting === p.id : false,
       cards: null,
+      bestHand: null,
     })),
     hand: null,
     actions: availableActions(state, forId),
@@ -674,8 +698,10 @@ export function publicState(state, forId) {
     for (const pl of out.players) {
       const mine = h.cards[pl.id];
       if (mine) {
-        if (pl.id === forId) pl.cards = mine;
-        else if (revealed && !pl.folded) pl.cards = mine;
+        if (pl.id === forId) {
+          pl.cards = mine;
+          pl.bestHand = describeCurrentHand(mine.concat(h.community));
+        } else if (revealed && !pl.folded) pl.cards = mine;
       }
     }
     out.hand = {

@@ -340,6 +340,14 @@
         }));
       });
     }
+    const best = $('bestHand');
+    if (me.bestHand && st.status !== 'lobby') {
+      $('bestHandValue').textContent = me.bestHand;
+      best.classList.remove('hidden');
+    } else {
+      best.classList.add('hidden');
+      $('bestHandValue').textContent = '';
+    }
     $('meInfo').classList.remove('hidden');
     $('meName').textContent = me.name;
     $('meStack').textContent = fmt(me.stack);

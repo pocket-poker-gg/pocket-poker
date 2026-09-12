@@ -54,3 +54,11 @@ The screenshot was mathematically misleading, not a wrong winner or lost chips. 
 - Live three-client hand, private-card isolation, chip conservation, reconnect to same seat and next-hand continuation passed.
 - Live guessed/unreserved room returned 404; reserved room with foreign Origin returned 403.
 - Live response exposes CSP/frame-ancestors none, HSTS, nosniff, no-referrer, Permissions Policy, COOP and X-Frame-Options deny.
+
+
+## Best current hand indicator (2026-09-12)
+- Baseline verified before changes: 26/26 tests and exhaustive 2,598,960-hand evaluator census green.
+- Added a private player-facing `bestHand` summary computed by the authoritative evaluator from the player's hole cards plus the current board.
+- Preflop uses made-hand/high-card descriptions; flop through river uses `pokersolver`'s exact best-five description.
+- UI is an understated monochrome capsule between the player's cards and identity, hidden outside a dealt hand.
+- Added street progression and privacy regressions. Deployment and 390x844 production visual checks pending.

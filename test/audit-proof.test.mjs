@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import pokersolver from 'pokersolver';
-import { createGame, join, startHand, act, availableActions, publicState, potTotal, setTestDeck, settleShowdownForTest, GameError } from '../src/engine.js';
+import { createGame, join, startHand, act, availableActions, publicState, potTotal, setTestDeck, settleShowdownForTest, describeCurrentHand, GameError } from '../src/engine.js';
 const { Hand } = pokersolver;
 const deck = [...'cdhs'].flatMap((s) => [...'23456789TJQKA'].map((r) => r + s));
 
@@ -15,6 +15,24 @@ function legal(av) {
   if (av.owe > 0) return av.canRaise && Math.random() < .18 ? {kind:'raise',amount:av.minRaiseTo} : Math.random()<.22 ? {kind:'fold'} : {kind:'call'};
   return av.canBet && Math.random()<.22 ? {kind:'bet',amount:av.minBet} : {kind:'check'};
 }
+
+test('best-current-hand summary is correct from preflop through river', () => {
+  assert.equal(describeCurrentHand(['Ks', '7h']), 'K High');
+  assert.equal(describeCurrentHand(['Ks', 'Kh']), "Pair of K's");
+  assert.equal(describeCurrentHand(['Ks', '7h', '9c', '9h', 'Kd']), "Two Pair, K's & 9's");
+  assert.equal(describeCurrentHand(['7s', '8s', '9s', 'Ts', 'Js']), 'Straight Flush, Js High');
+  assert.equal(describeCurrentHand(['As', 'Kd', '2c', '3h', '4s', '9d', 'Tc']), 'A High');
+});
+
+test('best-current-hand summary is private to its player view', () => {
+  const { g, ids } = game([1000, 1000]);
+  startHand(g, ids[0]);
+  const view = publicState(g, ids[0]);
+  const mine = view.players.find((p) => p.id === ids[0]);
+  const other = view.players.find((p) => p.id === ids[1]);
+  assert.ok(mine.bestHand);
+  assert.equal(other.bestHand, null);
+});
 
 test('golden evaluator vectors cover wheel, board play, counterfeit, flush and quads', () => {
   const win = (a,b,board) => Hand.winners([Hand.solve([...a,...board]), Hand.solve([...b,...board])]).length;
