@@ -110,7 +110,9 @@ test('side pots with staggered all-ins', () => {
   // at least one showdown happened
   assert.equal(g.hand.result.type, 'showdown');
   const potsTotal = g.hand.result.pots.reduce((a, p) => a + p.amount, 0);
-  assert.equal(potsTotal, 1250);
+  const refund = g.hand.result.uncalledRefund?.amount || 0;
+  assert.equal(potsTotal + refund, 1250);
+  assert.equal(potsTotal, 450, 'only matched contributions are awarded as pots');
 });
 
 test('uncontested overbet refund', () => {

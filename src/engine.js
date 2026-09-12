@@ -550,8 +550,25 @@ function buildPots(h) {
   return pots;
 }
 
+function refundUncalledExcess(state) {
+  const h = state.hand;
+  const ranked = Object.entries(h.contrib).sort((a, b) => b[1] - a[1]);
+  if (ranked.length < 2) return null;
+  const excess = ranked[0][1] - ranked[1][1];
+  if (excess <= 0) return null;
+  const player = state.players.find((p) => p.id === ranked[0][0]);
+  if (!player) throw new GameError('Invalid contribution ledger');
+  h.contrib[player.id] -= excess;
+  player.stack += excess;
+  log(state, `${player.name} received ${excess} uncalled`);
+  return { id: player.id, amount: excess };
+}
+
 function showdown(state) {
   const h = state.hand;
+  // Chips no opponent matched are not a pot and must never be described as winnings.
+  // Return them before constructing contribution layers, including all-in runouts.
+  const refund = refundUncalledExcess(state);
   h.street = 'showdown';
   h.revealed = true;
   const evals = {};
@@ -598,7 +615,7 @@ function showdown(state) {
       })),
     });
   }
-  h.result = { type: 'showdown', pots: potResults };
+  h.result = { type: 'showdown', pots: potResults, uncalledRefund: refund };
   h.acting = null;
   h.turnDeadline = 0;
   state.status = 'between';
@@ -680,3 +697,5 @@ export function publicState(state, forId) {
 }
 
 export function setTestDeck(state, deck) { state._testDeck = [...deck]; }
+
+export function settleShowdownForTest(state) { showdown(state); }

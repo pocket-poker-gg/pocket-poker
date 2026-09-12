@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import pokersolver from 'pokersolver';
-import { createGame, join, startHand, act, availableActions, publicState, potTotal, setTestDeck, GameError } from '../src/engine.js';
+import { createGame, join, startHand, act, availableActions, publicState, potTotal, setTestDeck, settleShowdownForTest, GameError } from '../src/engine.js';
 const { Hand } = pokersolver;
 const deck = [...'cdhs'].flatMap((s) => [...'23456789TJQKA'].map((r) => r + s));
 
@@ -74,13 +74,33 @@ test('heads-up button posts small blind and acts first preflop, last postflop', 
 });
 
 test('short all-in does not reopen a player who already acted', () => {
-  const {g}=game([1000,25,1000]); startHand(g,g.hostId);
+  const {g}=game([1000,25,1000]);
+  // Make seats deterministic: dealer seat 2 => seat 0 first, seat 1 second, short BB seat 2.
+  g.dealerSeat=1; startHand(g,g.hostId);
   const first=g.hand.acting;
   act(g,first,{kind:'raise',amount:20});
-  const short=g.hand.acting; assert.equal(g.players.find(p=>p.id===short).stack<=20,true);
-  act(g,short,{kind:'allin'});
-  while(g.status==='playing' && g.hand.street==='preflop' && g.hand.acting!==first) {
-    const av=availableActions(g,g.hand.acting); act(g,g.hand.acting,av.owe?{kind:'call'}:{kind:'check'});
-  }
-  if(g.status==='playing' && g.hand.street==='preflop') assert.ok(!availableActions(g,first).canRaise);
+  const second=g.hand.acting; act(g,second,{kind:'call'});
+  const short=g.hand.acting; assert.equal(g.players.find(p=>p.id===short).stack,15);
+  act(g,short,{kind:'allin'}); // to 25, a short raise of 5 after a full raise of 10
+  assert.ok([first,second].includes(g.hand.acting));
+  assert.ok(!availableActions(g,g.hand.acting).canRaise);
+});
+
+test('regression E2F7: unmatched all-in excess is refunded, never reported as winnings', () => {
+  // Exact screenshot economics: two 500 stacks; the losing player has 210 left.
+  // Contributions are 290 vs 500, so only 580 is contested and 210 is returned.
+  const {g,ids}=game([500,500]); startHand(g,g.hostId);
+  const loser=ids[0], winner=ids[1];
+  g.hand.contrib[loser]=290; g.hand.contrib[winner]=500;
+  g.players.find(p=>p.id===loser).stack=210; g.players.find(p=>p.id===winner).stack=0;
+  g.hand.cards[loser]=['6h','7d']; g.hand.cards[winner]=['7h','Ks'];
+  g.hand.community=['3h','Qs','Kd','9c','9h']; g.hand.folded={};
+  settleShowdownForTest(g);
+  assert.deepEqual(g.hand.result.uncalledRefund,{id:winner,amount:210});
+  assert.equal(g.hand.result.pots.length,1);
+  assert.equal(g.hand.result.pots[0].amount,580,'only matched chips are winnings');
+  assert.equal(g.hand.result.pots[0].winners[0].id,winner);
+  assert.equal(g.hand.result.pots[0].winners[0].amount,580);
+  assert.equal(g.players.find(p=>p.id===winner).stack,790,'final screenshot stack remains correct');
+  assert.equal(g.players.find(p=>p.id===loser).stack,210);
 });
