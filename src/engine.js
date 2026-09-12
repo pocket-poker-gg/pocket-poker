@@ -13,7 +13,8 @@ function randInt(n) {
   return buf[0] % n;
 }
 function genToken() {
-  const buf = new Uint8Array(16);
+  // 256-bit reconnect/seat capability. The human room code is never seat authority.
+  const buf = new Uint8Array(32);
   crypto.getRandomValues(buf);
   return [...buf].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
@@ -49,6 +50,8 @@ export function createGame(code, config = {}) {
     log: [], // {n, msg}
     logSeq: 0,
     hostId: null,
+    createdAt: Date.now(),
+    lastActivityAt: Date.now(),
   };
 }
 
@@ -174,7 +177,9 @@ export function startHand(state, byId) {
   if (act.length < 2) throw new GameError('Need at least 2 players with chips');
 
   state.handNum++;
-  const deck = makeDeck();
+  const deck = Array.isArray(state._testDeck) ? [...state._testDeck] : makeDeck();
+  delete state._testDeck;
+  if (deck.length !== 52 || new Set(deck).size !== 52) throw new GameError('Invalid deck');
   const hand = {
     num: state.handNum,
     street: 'preflop',
@@ -194,6 +199,8 @@ export function startHand(state, byId) {
     turnDeadline: 0,
     result: null,
     revealed: false,
+    actionSeq: 0,
+    recentActionIds: [],
   };
   state.hand = hand;
   state.status = 'playing';
@@ -426,6 +433,8 @@ export function act(state, id, a) {
     default:
       throw new GameError('Unknown action');
   }
+  h.actionSeq++;
+  state.lastActivityAt = Date.now();
   return state;
 }
 
@@ -663,7 +672,10 @@ export function publicState(state, forId) {
       turnDeadline: h.turnDeadline,
       result: h.result,
       revealed,
+      actionSeq: h.actionSeq,
     };
   }
   return out;
 }
+
+export function setTestDeck(state, deck) { state._testDeck = [...deck]; }
